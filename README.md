@@ -13,14 +13,14 @@ Sound source does not exist. Therefore, you must add the sound source. Please ad
 NyanBeat/source/sound
 
 # Required sound source
-sound_hit.wav
+sound_hit.wav     /* hit sound (when you hit the notes properly) */
 
-sound_main.mp3
+sound_main.mp3    /* the main BGM (main menu) */
 
-sound_result.mp3
+sound_result.mp3  /* the result scree BGM */
 
-sound_01.mp3
+sound_01.mp3      /* game sound no.1 */
 
-sound_02.mp3
+sound_02.mp3      /* game sound no.2 */
 
-sound_03.mp3
+sound_03.mp3      /* game sound no.3 */
