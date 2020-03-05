@@ -1,6 +1,9 @@
 # NyanBeat-release
 A simple rhythm game : maintenance is in progress.
 
+# Notice
+The version of the sound library that was used is out of date and the license information has not been verified, so we will proceed with replacing the library.
+
 # BugReport
 Because it's an early version of development, there's a lot of unexception handled parts, and there's going to be a lot of bugs. If you find a bug, please report it in the mail below.
 
@@ -14,13 +17,8 @@ NyanBeat/source/sound
 
 # Required sound source
 sound_hit.wav : hit sound (when you hit the notes properly)
-
 sound_main.mp3 : the main BGM (main menu)
-
 sound_result.mp3 : the result scree BGM
-
 sound_01.mp3 : game sound no.1
-
 sound_02.mp3 : game sound no.2
-
 sound_03.mp3 : game sound no.3
