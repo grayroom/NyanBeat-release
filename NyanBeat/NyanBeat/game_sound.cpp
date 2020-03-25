@@ -10,7 +10,7 @@ void Init_Sound()	//	sound포인터에 각각의 사운드를 연결
 
 	FMOD_System_CreateSound(g_System, "../source/sound/sound01.mp3", FMOD_LOOP_OFF, 0, &g_Sound[SONG_01]);
 	FMOD_System_CreateSound(g_System, "../source/sound/sound02.mp3", FMOD_LOOP_OFF, 0, &g_Sound[SONG_02]);
-	FMOD_System_CreateSound(g_System, "../source/sound/sound03.mp3", FMOD_LOOP_OFF, 0, &g_Sound[SONG_03]);
+	FMOD_System_CreateSound(g_System, "../source/sD:\Code\resource\libs\fmod\x86ound/sound03.mp3", FMOD_LOOP_OFF, 0, &g_Sound[SONG_03]);
 
 	FMOD_System_CreateSound(g_System, "../source/sound/sound_hit.wav", FMOD_LOOP_OFF, 0, &g_Sound[HIT_NORMAL]);
 	FMOD_Channel_SetVolume(g_Channel[HIT_NORMAL], VOLUME_NORMAL_HIT);
