@@ -1,24 +1,12 @@
-# NyanBeat-release
-A simple rhythm game : maintenance is in progress.
+# NyanBeat
 
-# Notice
-The version of the sound library that was used is out of date and the license information has not been verified, so we will proceed with replacing the library.
+NyanBeat is a open source online battle rythm game. This is a personal project to study about TCP, OpenGL, and FMOD libraries.
 
-# BugReport
-Because it's an early version of development, there's a lot of unexception handled parts, and there's going to be a lot of bugs. If you find a bug, please report it in the mail below.
+# Requirements
 
-Contact : dev.weakboson@gmail.com
+- Visual Studio 2017
+- FMOD core API 2.0.8
 
-# Remark
-Sound source does not exist. Therefore, you must add the sound source. Please add the source as shown below.
+# License
 
-# Sound Source Location
-NyanBeat/source/sound
-
-# Required sound source
-sound_hit.wav : hit sound (when you hit the notes properly)
-sound_main.mp3 : the main BGM (main menu)
-sound_result.mp3 : the result scree BGM
-sound_01.mp3 : game sound no.1
-sound_02.mp3 : game sound no.2
-sound_03.mp3 : game sound no.3
+This project has any license yet. But some part(library, etc) of this repository may not be free to use(distribution, etc). Information about this point can be found in LICENSE folder.
