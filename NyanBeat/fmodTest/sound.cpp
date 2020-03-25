@@ -2,7 +2,11 @@
 
 std::vector<char *> soundPathList{};
 
-Sound::Sound(int track, char* soundSrc[]) {
+Sound::Sound() {
+
+}
+
+Sound::Sound(int track, vector<fs::path> soundSrc) {
 	res = FMOD::System_Create(&sys);
 	ErrCheck(res);
 
@@ -17,13 +21,18 @@ Sound::Sound(int track, char* soundSrc[]) {
 	ErrCheck(res);
 
 	sounds = new FMOD::Sound*[track];
-	for (int i = 0; i < track; i++); {
-		res = sys->createSound(SoundFileInclude(soundSrc[0]), FMOD_DEFAULT, 0, &sounds[0]);
+	char fileDir[PATH_LEN];
+	
+	std::cout << "Loading Sound Files...";
+	for (int i = 0; i < track; i++) {
+		wcstombs(fileDir, soundSrc[i].c_str(), PATH_LEN);
+		res = sys->createSound(fileDir, FMOD_DEFAULT, 0, &sounds[i]);
 		ErrCheck(res);
 	}
+	std::cout << " OK!" << std::endl;
 }
 
-void ErrCheck(FMOD_RESULT result) {
+void ErrCheck(const FMOD_RESULT result) {
 	if (result != FMOD_OK) {
 		ErrPrint("FMOD error %d - %s", result, FMOD_ErrorString(result));
 	}
@@ -58,3 +67,4 @@ char* SoundFileInclude(const char* fileName) {
 
 	return filePath;
 }
+

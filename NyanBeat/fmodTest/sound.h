@@ -8,6 +8,8 @@
 #include <fmod.hpp>
 #include <fmod_errors.h>
 
+#include "resource.h"
+
 #define ERR_MSG_LEN 1024
 
 class Sound {
@@ -22,10 +24,8 @@ private:
 
 public:
 	Sound();
-	Sound(int track, char* soundSrc[]);
+	Sound(int track, vector<fs::path> soundSrc);
 };
 
 void ErrCheck(FMOD_RESULT result);
 void ErrPrint(const char* format, ...);
-
-char* SoundFileInclude(const char* fileName);
