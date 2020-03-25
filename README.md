@@ -1,6 +1,6 @@
 # NyanBeat
 
-NyanBeat is a open source online battle rythm game. This is a personal project to study about TCP, OpenGL, and FMOD libraries.
+NyanBeat is a open source online battle rythm game. This is a personal project to study about C++, TCP, OpenGL, and FMOD libraries.
 
 # Requirements
 
