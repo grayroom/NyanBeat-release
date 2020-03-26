@@ -14,9 +14,13 @@ private:
 		string name;
 	};
 
-	FMOD::System* sys{ nullptr };
-	vector<Track> tracks{};
-	FMOD::Channel* channel{}; // single channel을 상정합니다.
+	FMOD::System*		sys{ nullptr };
+	vector<Track>		tracks{};
+	FMOD::Channel*		channel{}; // single channel을 상정합니다.
+	FMOD::ChannelGroup* masterGroup{};
+
+	FMOD::DSP*		dspChorus{};
+
 
 	FMOD_RESULT res;
 	unsigned int ver;
@@ -31,5 +35,8 @@ public:
 	Sound::Track			getTrack(const int num);
 	FMOD::Channel*			getChannel();
 
+	FMOD::DSP*				getDspEcho();
+
 	void PlaySoundNo(const int trackNum/*, const int channelNum = 0*/);
+	void ToggleDspEffect(FMOD::DSP* dsp);
 };

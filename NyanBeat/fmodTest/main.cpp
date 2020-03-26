@@ -12,11 +12,11 @@ int main() {
 
 	sound.PlaySoundNo(0);
 
-	bool isPlaying{ false };
 	do {
-		sound.getChannel()->isPlaying(&isPlaying);
-		Sleep(5000);
-	} while (isPlaying);
+		if (GetAsyncKeyState('D') >> 1 != 0) {
+			sound.ToggleDspEffect(sound.getDspEcho());
+		}
+	} while (!(GetAsyncKeyState('Q') & 0x8000));
 
 	return 0;
 }
