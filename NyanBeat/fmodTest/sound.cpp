@@ -51,20 +51,3 @@ void ErrPrint(const char* format, ...) {
 
 	exit(0);
 }
-
-char* SoundFileInclude(const char* fileName) {
-	char* filePath{ (char*)calloc(256, sizeof(char)) };
-	const char* soundLoc{ "../source/sound/" };
-
-	strcat(filePath, soundLoc);
-	strcat(filePath, fileName);
-
-	FILE* file;
-	if (file = fopen(filePath, "r")) {
-		fclose(file);
-		soundPathList.push_back(filePath);
-	}
-
-	return filePath;
-}
-
