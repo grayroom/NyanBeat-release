@@ -9,9 +9,14 @@
 
 class Sound {
 private:
+	struct Track {
+		FMOD::Sound* sound;
+		string name;
+	};
+
 	FMOD::System* sys{ nullptr };
-	FMOD::Sound** sounds;
-	FMOD::Channel* channel; // single channel을 상정합니다.
+	vector<Track> tracks{};
+	FMOD::Channel* channel{}; // single channel을 상정합니다.
 
 	FMOD_RESULT res;
 	unsigned int ver;
@@ -21,10 +26,10 @@ public:
 	Sound();
 	Sound(int track, vector<fs::path> soundSrc);
 
-	FMOD::System* getSys();
-	FMOD::Sound** getSounds();
-	FMOD::Sound* getSound(const int num);
-	FMOD::Channel* getChannel();
+	FMOD::System*			getSys();
+	vector<Sound::Track>	getTracks();
+	Sound::Track			getTrack(const int num);
+	FMOD::Channel*			getChannel();
 
-	void PlaySoundNo(const int soundNum/*, const int channelNum = 0*/);
+	void PlaySoundNo(const int trackNum/*, const int channelNum = 0*/);
 };

@@ -8,14 +8,9 @@
 int main() {
 	vector<fs::path> fileList{ getFiles("../source/sound") };
 
-	for (fs::path entry : fileList) {
-		cout << entry << endl;
-	}
-
 	Sound sound{ 3, fileList };
 
 	sound.PlaySoundNo(0);
-	cout << "playing music no." << 0 << endl;
 
 	bool isPlaying{ false };
 	do {

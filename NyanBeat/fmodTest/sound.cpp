@@ -18,19 +18,17 @@ Sound::Sound(int track, vector<fs::path> soundSrc) {
 	res = sys->init(32, FMOD_INIT_NORMAL, extradriverdata);
 	ErrCheck(res);
 
-	track = soundSrc.size() < track ? soundSrc.size() : track;
-	sounds = new FMOD::Sound*[track];
 	char fileDir[PATH_LEN];
-	
 	cout << "Loading Sound Files... ";
-	
+	track = soundSrc.size() < track ? soundSrc.size() : track;
 	for (int i = 0; i < track; i++) {
 		wcstombs(fileDir, soundSrc[i].c_str(), PATH_LEN);
-		res = sys->createSound(fileDir, FMOD_DEFAULT, 0, &sounds[i]);
+		res = sys->createSound(fileDir, FMOD_DEFAULT, 0, &tracks[i].sound);
 		ErrCheck(res);
+
+		tracks[i].name = soundSrc[i].filename().string();
 	}
 	cout << "OK!" << endl;
-	cout << track << " tracks have been loaded" << endl;
 }
 
 /*
@@ -40,19 +38,20 @@ FMOD::System* Sound::getSys() {
 	return this->sys;
 }
 
-FMOD::Sound** Sound::getSounds() {
-	return this->sounds;
+vector<Sound::Track> Sound::getTracks() {
+	return this->tracks;
 }
 
-FMOD::Sound* Sound::getSound(const int num) {
-	return this->sounds[num];
+Sound::Track Sound::getTrack(const int num) {
+	return this->tracks[num];
 }
 
 FMOD::Channel* Sound::getChannel() {
 	return this->channel;
 }
 
-void Sound::PlaySoundNo(const int soundNum/*, const int channelNum = 0*/) {
-	res = sys->playSound(sounds[soundNum], 0, false, &channel);
+void Sound::PlaySoundNo(const int trackNum/*, const int channelNum = 0*/) {
+	res = sys->playSound(tracks[trackNum].sound, 0, false, &channel);
+	cout << "playing track no." << trackNum << endl;
 	ErrCheck(res);
 }
