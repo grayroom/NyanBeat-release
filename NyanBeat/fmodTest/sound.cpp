@@ -2,9 +2,7 @@
 
 std::vector<char *> soundPathList{};
 
-Sound::Sound() {
-
-}
+Sound::Sound() {}
 
 Sound::Sound(int track, vector<fs::path> soundSrc) {
 	res = FMOD::System_Create(&sys);
@@ -20,51 +18,41 @@ Sound::Sound(int track, vector<fs::path> soundSrc) {
 	res = sys->init(32, FMOD_INIT_NORMAL, extradriverdata);
 	ErrCheck(res);
 
+	track = soundSrc.size() < track ? soundSrc.size() : track;
 	sounds = new FMOD::Sound*[track];
 	char fileDir[PATH_LEN];
 	
-	std::cout << "Loading Sound Files...";
+	cout << "Loading Sound Files... ";
+	
 	for (int i = 0; i < track; i++) {
 		wcstombs(fileDir, soundSrc[i].c_str(), PATH_LEN);
 		res = sys->createSound(fileDir, FMOD_DEFAULT, 0, &sounds[i]);
 		ErrCheck(res);
 	}
-	std::cout << " OK!" << std::endl;
+	cout << "OK!" << endl;
+	cout << track << " tracks have been loaded" << endl;
 }
 
-void ErrCheck(const FMOD_RESULT result) {
-	if (result != FMOD_OK) {
-		ErrPrint("FMOD error %d - %s", result, FMOD_ErrorString(result));
-	}
+/*
+ * Get Methods
+ */
+FMOD::System* Sound::getSys() {
+	return this->sys;
 }
 
-void ErrPrint(const char* format, ...) {
-	char errMsg[ERR_MSG_LEN];
-
-	va_list args;
-	va_start(args, format);
-	vsnprintf(errMsg, ERR_MSG_LEN, format, args);
-	//TODO: 아래 코드를 삭제하고, 콘솔을 일관되게 업데이트 할 수 있는 함수를 구현할 것
-	perror(errMsg);
-	va_end(args);
-	//errMsg[ERR_MSG_LEN - 1] = '\0';
-
-	exit(0);
+FMOD::Sound** Sound::getSounds() {
+	return this->sounds;
 }
 
-char* SoundFileInclude(const char* fileName) {
-	char* filePath{ (char*)calloc(256, sizeof(char)) };
-	const char* soundLoc{ "../source/sound/" };
-
-	strcat(filePath, soundLoc);
-	strcat(filePath, fileName);
-
-	FILE* file;
-	if (file = fopen(filePath, "r")) {
-		fclose(file);
-		soundPathList.push_back(filePath);
-	}
-
-	return filePath;
+FMOD::Sound* Sound::getSound(const int num) {
+	return this->sounds[num];
 }
 
+FMOD::Channel* Sound::getChannel() {
+	return this->channel;
+}
+
+void Sound::PlaySoundNo(const int soundNum/*, const int channelNum = 0*/) {
+	res = sys->playSound(sounds[soundNum], 0, false, &channel);
+	ErrCheck(res);
+}
