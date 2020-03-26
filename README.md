@@ -4,7 +4,7 @@ NyanBeat is a open source online battle rythm game. This is a personal project t
 
 # Requirements
 
-- Visual Studio 2017
+- Visual Studio 2019
 - FMOD core API 2.0.8
 
 # License
