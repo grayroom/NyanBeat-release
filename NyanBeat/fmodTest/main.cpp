@@ -1,4 +1,5 @@
 ﻿#include <iostream>
+#include <Windows.h>
 #include "sound.h"
 
 #define TRACK 3
@@ -11,7 +12,16 @@ int main() {
 		cout << entry << endl;
 	}
 
-	Sound soundSys{ 3, fileList };
+	Sound sound{ 3, fileList };
+
+	sound.PlaySoundNo(0);
+	cout << "playing music no." << 0 << endl;
+
+	bool isPlaying{ false };
+	do {
+		sound.getChannel()->isPlaying(&isPlaying);
+		Sleep(5000);
+	} while (isPlaying);
 
 	return 0;
 }

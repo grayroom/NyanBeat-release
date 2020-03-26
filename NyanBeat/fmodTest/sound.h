@@ -1,23 +1,18 @@
 #pragma once
 
 #include <iostream>
-#include <stdio.h>
-#include <stdlib.h>
-#include <stdarg.h>
 #include <vector>
 #include <fmod.hpp>
-#include <fmod_errors.h>
 
 #include "resource.h"
-
-#define ERR_MSG_LEN 1024
+#include "common.h"
 
 class Sound {
 private:
 	FMOD::System* sys{ nullptr };
 	FMOD::Sound** sounds;
-	FMOD::Channel* channel;
-	
+	FMOD::Channel* channel; // single channel을 상정합니다.
+
 	FMOD_RESULT res;
 	unsigned int ver;
 	void* extradriverdata;
@@ -25,7 +20,11 @@ private:
 public:
 	Sound();
 	Sound(int track, vector<fs::path> soundSrc);
-};
 
-void ErrCheck(FMOD_RESULT result);
-void ErrPrint(const char* format, ...);
+	FMOD::System* getSys();
+	FMOD::Sound** getSounds();
+	FMOD::Sound* getSound(const int num);
+	FMOD::Channel* getChannel();
+
+	void PlaySoundNo(const int soundNum/*, const int channelNum = 0*/);
+};

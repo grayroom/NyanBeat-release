@@ -13,9 +13,6 @@
       <UniqueIdentifier>{67DA6AB6-F800-4c08-8B7A-83BB121AAD01}</UniqueIdentifier>
       <Extensions>rc;ico;cur;bmp;dlg;rc2;rct;bin;rgs;gif;jpg;jpeg;jpe;resx;tiff;tif;png;wav;mfcribbon-ms</Extensions>
     </Filter>
-    <Filter Include="리소스 파일\soundSrc">
-      <UniqueIdentifier>{149563b6-57d6-4f58-8fc5-475f8d69cafe}</UniqueIdentifier>
-    </Filter>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="main.cpp">
@@ -27,6 +24,9 @@
     <ClCompile Include="resource.cpp">
       <Filter>소스 파일</Filter>
     </ClCompile>
+    <ClCompile Include="common.cpp">
+      <Filter>소스 파일</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="sound.h">
@@ -35,21 +35,8 @@
     <ClInclude Include="resource.h">
       <Filter>헤더 파일</Filter>
     </ClInclude>
-  </ItemGroup>
-  <ItemGroup>
-    <Media Include="..\source\sound\shooting star.mp3">
-      <Filter>리소스 파일\soundSrc</Filter>
-    </Media>
-    <Media Include="..\source\sound\bad guy.mp3">
-      <Filter>리소스 파일\soundSrc</Filter>
-    </Media>
-    <Media Include="..\source\sound\blueming.mp3">
-      <Filter>리소스 파일\soundSrc</Filter>
-    </Media>
-  </ItemGroup>
-  <ItemGroup>
-    <None Include="..\source\sound\trackList">
-      <Filter>리소스 파일</Filter>
-    </None>
+    <ClInclude Include="common.h">
+      <Filter>헤더 파일</Filter>
+    </ClInclude>
   </ItemGroup>
 </Project>
