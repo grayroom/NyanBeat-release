@@ -338,4 +338,7 @@ ASALocalRun/
 # Local History for Visual Studio
 .localhistory/
 
+# .mp3 file
+*.mp3
+
 # End of https://www.gitignore.io/api/visualstudio
