@@ -9,17 +9,17 @@
 
 #define ERR_MSG_LEN 1024
 
-union KeySet {
+struct KeySet {
 	/*
 	 	[--------EMPTY 22 FIELD--------][987654321]
 		Only lower 9 bit has valid key value. When number key pressed, corresponding bit set high(1). In this way, you can
 		get 9 key status information at the same time(9-key rollover)
 	*/
-	int NumKey;
+	int numKey;
 	/*
 		Get single command key
 	*/
-	char CmdKey;
+	char cmdKey;
 };
 
 unsigned WINAPI listenKeyPress(void* arg);

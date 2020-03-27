@@ -1,12 +1,27 @@
 #include "common.h"
 
-void listenKeyPress() {
-}
+extern HANDLE hMutex;
 
 unsigned __stdcall listenKeyPress(void* arg) {
+	KeySet* keyPress{(KeySet*)arg};
 
+	do {
+		Sleep(1);
+		WaitForSingleObject(hMutex, INFINITE);
+		keyPress->numKey = 0;
+		keyPress->cmdKey = 0;
 
-	std::cout << "GOTCHA!" << std::endl;
+		for (int i = 0; i < 9; i++) {
+			if (GetAsyncKeyState(VK_NUMPAD1 + i) & 0x0001) {
+				keyPress->numKey = keyPress->numKey | 0b1 << i;
+			}
+		}
+
+		if (GetAsyncKeyState(VK_ESCAPE) & 0x0001) {
+			keyPress->cmdKey = VK_ESCAPE;
+		}
+		ReleaseMutex(hMutex);
+	} while (true);
 
 	return 0;
 }
