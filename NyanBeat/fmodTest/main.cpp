@@ -1,22 +1,25 @@
-﻿#include <iostream>
-#include <Windows.h>
-#include "sound.h"
+﻿#include "sound.h"
 
 #define TRACK 3
 #define TRACK_SIZE 256
 
 int main() {
-	vector<fs::path> fileList{ getFiles("../source/sound") };
-
+	std::vector<fs::path> fileList{ getFiles("../source/sound") };
 	Sound sound{ 3, fileList };
-
 	sound.PlaySoundNo(0);
 
+	HANDLE hThread;
+	unsigned threadID{1};
+
+	char recentKey{};
+	hThread = (HANDLE)_beginthreadex(NULL, 0, listenKeyPress, (void*)&recentKey, 0, &threadID);
+
+	short isKey{ false };
+
 	do {
-		if (GetAsyncKeyState('D') >> 1 != 0) {
-			sound.ToggleDspEffect(sound.getDspEcho());
-		}
-	} while (!(GetAsyncKeyState('Q') & 0x8000));
+		Sleep(1000);
+		std::cout << "waiting..." << std::endl;
+	} while (true);
 
 	return 0;
 }

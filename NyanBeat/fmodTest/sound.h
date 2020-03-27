@@ -11,11 +11,11 @@ class Sound {
 private:
 	struct Track {
 		FMOD::Sound* sound;
-		string name;
+		std::string name;
 	};
 
 	FMOD::System*		sys{ nullptr };
-	vector<Track>		tracks{};
+	std::vector<Track>		tracks{};
 	FMOD::Channel*		channel{}; // single channel을 상정합니다.
 	FMOD::ChannelGroup* masterGroup{};
 
@@ -28,10 +28,10 @@ private:
 
 public:
 	Sound();
-	Sound(int track, vector<fs::path> soundSrc);
+	Sound(int track, std::vector<fs::path> soundSrc);
 
 	FMOD::System*			getSys();
-	vector<Sound::Track>	getTracks();
+	std::vector<Sound::Track>	getTracks();
 	Sound::Track			getTrack(const int num);
 	FMOD::Channel*			getChannel();
 

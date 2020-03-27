@@ -5,7 +5,6 @@
 
 #define PATH_LEN 256
 
-using namespace std;
-namespace fs = filesystem;
+namespace fs = std::filesystem;
 
-vector<fs::path> getFiles(const char* Dir);
+std::vector<fs::path> getFiles(const char* Dir);

@@ -1,5 +1,16 @@
 #include "common.h"
 
+void listenKeyPress() {
+}
+
+unsigned __stdcall listenKeyPress(void* arg) {
+
+
+	std::cout << "GOTCHA!" << std::endl;
+
+	return 0;
+}
+
 void ErrCheck(const FMOD_RESULT result) {
 	if (result != FMOD_OK) {
 		ErrPrint("FMOD error %d - %s", result, FMOD_ErrorString(result));

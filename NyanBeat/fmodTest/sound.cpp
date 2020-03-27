@@ -4,7 +4,7 @@ std::vector<char *> soundPathList{};
 
 Sound::Sound() {}
 
-Sound::Sound(int track, vector<fs::path> soundSrc) {
+Sound::Sound(int track, std::vector<fs::path> soundSrc) {
 	res = FMOD::System_Create(&sys);
 	ErrCheck(res);
 
@@ -22,7 +22,7 @@ Sound::Sound(int track, vector<fs::path> soundSrc) {
 	ErrCheck(res);
 
 	char fileDir[PATH_LEN];
-	cout << "Loading Sound Files... ";
+	std::cout << "Loading Sound Files... ";
 	tracks.resize(soundSrc.size() < track ? soundSrc.size() : track);
 	for (int i = 0; i < tracks.size(); i++) {
 		wcstombs(fileDir, soundSrc[i].c_str(), PATH_LEN);
@@ -31,7 +31,7 @@ Sound::Sound(int track, vector<fs::path> soundSrc) {
 
 		tracks[i].name = soundSrc[i].filename().string();
 	}
-	cout << "OK!" << endl;
+	std::cout << "OK!" << std::endl;
 
 	res = sys->createDSPByType(FMOD_DSP_TYPE_CHORUS, &dspChorus);
 	ErrCheck(res);
@@ -50,7 +50,7 @@ FMOD::System* Sound::getSys() {
 	return this->sys;
 }
 
-vector<Sound::Track> Sound::getTracks() {
+std::vector<Sound::Track> Sound::getTracks() {
 	return this->tracks;
 }
 
@@ -68,7 +68,7 @@ FMOD::DSP* Sound::getDspEcho() {
 
 void Sound::PlaySoundNo(const int trackNum/*, const int channelNum = 0*/) {
 	res = sys->playSound(tracks[trackNum].sound, 0, false, &channel);
-	cout << "playing track no." << trackNum << endl;
+	std::cout << "playing track no." << trackNum << std::endl;
 	ErrCheck(res);
 }
 
