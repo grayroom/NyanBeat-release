@@ -21,7 +21,7 @@ int main() {
 
 	hMutex = CreateMutex(NULL, FALSE, NULL);
 	do {
-		WaitForSingleObject(hMutex, INFINITE);
+		WaitForSingleObject(hMutex, INFINITE); // critial section control for keyPress 
 		if (currKey.numKey != 0) {
 			std::cout << "Current KeySet(num): " << std::bitset<9>(currKey.numKey) << std::endl;
 		}
@@ -29,7 +29,7 @@ int main() {
 			std::bitset<9> temp(currKey.cmdKey);
 			std::cout << "Current KeySet(cmd): " << std::bitset<9>(currKey.cmdKey) << std::endl;
 		}
-		ReleaseMutex(hMutex);
+		ReleaseMutex(hMutex); // end
 	} while (true);
 
 

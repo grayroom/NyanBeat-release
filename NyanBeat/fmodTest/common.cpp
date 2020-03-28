@@ -7,7 +7,7 @@ unsigned __stdcall listenKeyPress(void* arg) {
 
 	do {
 		Sleep(1);
-		WaitForSingleObject(hMutex, INFINITE);
+		WaitForSingleObject(hMutex, INFINITE); // critial section control for argument(keyPress) 
 		keyPress->numKey = 0;
 		keyPress->cmdKey = 0;
 
@@ -20,7 +20,7 @@ unsigned __stdcall listenKeyPress(void* arg) {
 		if (GetAsyncKeyState(VK_ESCAPE) & 0x0001) {
 			keyPress->cmdKey = VK_ESCAPE;
 		}
-		ReleaseMutex(hMutex);
+		ReleaseMutex(hMutex); // end
 	} while (true);
 
 	return 0;
