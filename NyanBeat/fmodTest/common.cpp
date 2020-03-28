@@ -26,13 +26,29 @@ unsigned __stdcall listenKeyPress(void* arg) {
 	return 0;
 }
 
-void ErrCheck(const FMOD_RESULT result) {
+void hideCursor() {
+	CONSOLE_CURSOR_INFO cursor{};
+	cursor.dwSize = 1;
+	cursor.bVisible = FALSE;
+
+	SetConsoleCursorInfo(GetStdHandle(STD_OUTPUT_HANDLE), &cursor);
+}
+
+void moveCursor(const int x, const int y) {
+	COORD cursor;
+	cursor.X = x;
+	cursor.Y = y;
+
+	SetConsoleCursorPosition(GetStdHandle(STD_OUTPUT_HANDLE), cursor);
+}
+
+void errCheck(const FMOD_RESULT result) {
 	if (result != FMOD_OK) {
-		ErrPrint("FMOD error %d - %s", result, FMOD_ErrorString(result));
+		errPrint("FMOD error %d - %s", result, FMOD_ErrorString(result));
 	}
 }
 
-void ErrPrint(const char* format, ...) {
+void errPrint(const char* format, ...) {
 	char errMsg[ERR_MSG_LEN];
 
 	va_list args;

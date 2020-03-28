@@ -6,20 +6,20 @@ Sound::Sound() {}
 
 Sound::Sound(int track, std::vector<fs::path> soundSrc) {
 	res = FMOD::System_Create(&sys);
-	ErrCheck(res);
+	errCheck(res);
 
 	res = sys->getVersion(&ver);
-	ErrCheck(res);
+	errCheck(res);
 
 	if (ver < FMOD_VERSION) {
-		ErrPrint("FMOD lib version %08x doesn't match header version %08x", ver, FMOD_VERSION);
+		errPrint("FMOD lib version %08x doesn't match header version %08x", ver, FMOD_VERSION);
 	}
 
 	res = sys->init(32, FMOD_INIT_NORMAL, extradriverdata);
-	ErrCheck(res);
+	errCheck(res);
 
 	res = sys->getMasterChannelGroup(&masterGroup);
-	ErrCheck(res);
+	errCheck(res);
 
 	char fileDir[PATH_LEN];
 	std::cout << "Loading Sound Files... ";
@@ -27,20 +27,20 @@ Sound::Sound(int track, std::vector<fs::path> soundSrc) {
 	for (int i = 0; i < tracks.size(); i++) {
 		wcstombs(fileDir, soundSrc[i].c_str(), PATH_LEN);
 		res = sys->createSound(fileDir, FMOD_DEFAULT, 0, &tracks[i].sound);
-		ErrCheck(res);
+		errCheck(res);
 
 		tracks[i].name = soundSrc[i].filename().string();
 	}
 	std::cout << "OK!" << std::endl;
 
 	res = sys->createDSPByType(FMOD_DSP_TYPE_CHORUS, &dspChorus);
-	ErrCheck(res);
+	errCheck(res);
 
 	res = masterGroup->addDSP(0, dspChorus);
-	ErrCheck(res);
+	errCheck(res);
 
 	res = dspChorus->setBypass(true);
-	ErrCheck(res);
+	errCheck(res);
 }
 
 /*
@@ -69,15 +69,15 @@ FMOD::DSP* Sound::getDspEcho() {
 void Sound::PlaySoundNo(const int trackNum/*, const int channelNum = 0*/) {
 	res = sys->playSound(tracks[trackNum].sound, 0, false, &channel);
 	std::cout << "playing track no." << trackNum << std::endl;
-	ErrCheck(res);
+	errCheck(res);
 }
 
 void Sound::ToggleDspEffect(FMOD::DSP* dsp) {
 	bool bypassStat;
 
 	res = dsp->getBypass(&bypassStat);
-	ErrCheck(res);
+	errCheck(res);
 
 	res = dsp->setBypass(!bypassStat);
-	ErrCheck(res);
+	errCheck(res);
 }

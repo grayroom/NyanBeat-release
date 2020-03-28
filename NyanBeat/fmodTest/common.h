@@ -24,5 +24,8 @@ struct KeySet {
 
 unsigned WINAPI listenKeyPress(void* arg);
 
-void ErrCheck(const FMOD_RESULT result);
-void ErrPrint(const char* format, ...);
+void hideCursor();
+void moveCursor(const int x, const int y);
+
+void errCheck(const FMOD_RESULT result);
+void errPrint(const char* format, ...);

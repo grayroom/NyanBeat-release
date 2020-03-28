@@ -15,19 +15,16 @@
     </Filter>
   </ItemGroup>
   <ItemGroup>
-    <ClCompile Include="game_general.cpp">
+    <ClCompile Include="game_general.c">
       <Filter>소스 파일</Filter>
     </ClCompile>
-    <ClCompile Include="game_sound.cpp">
+    <ClCompile Include="game_sound.c">
       <Filter>소스 파일</Filter>
     </ClCompile>
-    <ClCompile Include="main.cpp">
+    <ClCompile Include="main.c">
       <Filter>소스 파일</Filter>
     </ClCompile>
-    <ClCompile Include="setup.cpp">
-      <Filter>소스 파일</Filter>
-    </ClCompile>
-    <ClCompile Include="sound.cpp">
+    <ClCompile Include="setup.c">
       <Filter>소스 파일</Filter>
     </ClCompile>
   </ItemGroup>
@@ -36,9 +33,6 @@
       <Filter>헤더 파일</Filter>
     </ClInclude>
     <ClInclude Include="game_sound.h">
-      <Filter>헤더 파일</Filter>
-    </ClInclude>
-    <ClInclude Include="sound.h">
       <Filter>헤더 파일</Filter>
     </ClInclude>
   </ItemGroup>
