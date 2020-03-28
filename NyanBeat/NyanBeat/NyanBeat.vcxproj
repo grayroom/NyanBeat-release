@@ -167,12 +167,10 @@
     <ClCompile Include="game_sound.c" />
     <ClCompile Include="main.c" />
     <ClCompile Include="setup.c" />
-    <ClCompile Include="sound.c" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="game_general.h" />
     <ClInclude Include="game_sound.h" />
-    <ClInclude Include="sound.h" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">
