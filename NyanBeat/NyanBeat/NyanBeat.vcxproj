@@ -163,11 +163,11 @@
     </Link>
   </ItemDefinitionGroup>
   <ItemGroup>
-    <ClCompile Include="game_general.cpp" />
-    <ClCompile Include="game_sound.cpp" />
-    <ClCompile Include="main.cpp" />
-    <ClCompile Include="setup.cpp" />
-    <ClCompile Include="sound.cpp" />
+    <ClCompile Include="game_general.c" />
+    <ClCompile Include="game_sound.c" />
+    <ClCompile Include="main.c" />
+    <ClCompile Include="setup.c" />
+    <ClCompile Include="sound.c" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="game_general.h" />

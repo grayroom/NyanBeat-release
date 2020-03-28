@@ -19,5 +19,5 @@ public:
 	Sound();
 };
 
-void ErrCheck(FMOD_RESULT result);
-void ErrPrint(const char* format, ...);
+void errCheck(FMOD_RESULT result);
+void errPrint(const char* format, ...);
