@@ -1,46 +1,5 @@
+#include "pch.h"
 #include "common.h"
-
-extern HANDLE hMutex;
-
-unsigned __stdcall listenKeyPress(void* arg) {
-	KeySet* keyPress{(KeySet*)arg};
-
-	do {
-		Sleep(1);
-		WaitForSingleObject(hMutex, INFINITE); // critial section control for argument(keyPress) 
-		keyPress->numKey = 0;
-		keyPress->cmdKey = 0;
-
-		for (int i = 0; i < 9; i++) {
-			if (GetAsyncKeyState(VK_NUMPAD1 + i) & 0x0001) {
-				keyPress->numKey = keyPress->numKey | 0b1 << i;
-			}
-		}
-
-		if (GetAsyncKeyState(VK_ESCAPE) & 0x0001) {
-			keyPress->cmdKey = VK_ESCAPE;
-		}
-		ReleaseMutex(hMutex); // end
-	} while (true);
-
-	return 0;
-}
-
-void hideCursor() {
-	CONSOLE_CURSOR_INFO cursor{};
-	cursor.dwSize = 1;
-	cursor.bVisible = FALSE;
-
-	SetConsoleCursorInfo(GetStdHandle(STD_OUTPUT_HANDLE), &cursor);
-}
-
-void moveCursor(const int x, const int y) {
-	COORD cursor;
-	cursor.X = x;
-	cursor.Y = y;
-
-	SetConsoleCursorPosition(GetStdHandle(STD_OUTPUT_HANDLE), cursor);
-}
 
 void errCheck(const FMOD_RESULT result) {
 	if (result != FMOD_OK) {

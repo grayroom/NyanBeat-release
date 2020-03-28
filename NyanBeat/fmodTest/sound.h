@@ -1,25 +1,24 @@
 #pragma once
 
-#include <iostream>
-#include <vector>
-#include <fmod.hpp>
-
-#include "resource.h"
 #include "common.h"
+
+#define PATH_LEN 256
+
+namespace fs = std::filesystem;
 
 class Sound {
 private:
 	struct Track {
-		FMOD::Sound* sound;
-		std::string name;
+		FMOD::Sound*	sound;
+		std::string		name;
 	};
 
-	FMOD::System*		sys{ nullptr };
-	std::vector<Track>		tracks{};
-	FMOD::Channel*		channel{}; // single channel을 상정합니다.
-	FMOD::ChannelGroup* masterGroup{};
+	FMOD::System*		sys;
+	std::vector<Track>	tracks;
+	FMOD::Channel*		channel; // single channel을 상정합니다.
+	FMOD::ChannelGroup* masterGroup;
 
-	FMOD::DSP*		dspChorus{};
+	FMOD::DSP*			dspChorus;
 
 
 	FMOD_RESULT res;

@@ -1,3 +1,4 @@
+#include "pch.h"
 #include "sound.h"
 
 std::vector<char *> soundPathList{};
@@ -22,9 +23,10 @@ Sound::Sound(int track, std::vector<fs::path> soundSrc) {
 	errCheck(res);
 
 	char fileDir[PATH_LEN];
+
 	std::cout << "Loading Sound Files... ";
 	tracks.resize(soundSrc.size() < track ? soundSrc.size() : track);
-	for (int i = 0; i < tracks.size(); i++) {
+	for (int i = 0; i < tracks.size(); ++i) {
 		wcstombs(fileDir, soundSrc[i].c_str(), PATH_LEN);
 		res = sys->createSound(fileDir, FMOD_DEFAULT, 0, &tracks[i].sound);
 		errCheck(res);

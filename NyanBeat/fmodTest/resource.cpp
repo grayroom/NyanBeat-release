@@ -1,3 +1,4 @@
+#include "pch.h"
 #include "resource.h"
 
 std::vector<fs::path> getFiles(const char* dir) {
