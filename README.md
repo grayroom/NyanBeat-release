@@ -1,11 +1,16 @@
 # NyanBeat
 
-NyanBeat is a open source online battle rythm game. This is a personal project to study about C++, TCP, OpenGL, and FMOD libraries.
+NyanBeat is a open source online battle rythm game. This is a personal project to study about windows API, C++, TCP socket, OpenGL, and FMOD libraries.
 
 # Requirements
 
 - Visual Studio 2019
 - FMOD core API 2.0.8
+
+# About Projects
+
+- fmodTest: new NyanBeat project and FMOD test with C++
+- NyanBeat: depricated NyanBeat project with C
 
 # License
 
