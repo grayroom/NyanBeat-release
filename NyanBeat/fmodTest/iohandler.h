@@ -29,10 +29,15 @@ namespace NyanIO {
 
 	class Input {
 	private:
-		Keyset	keyStat;
+		Keyset*	keyStat;
 		int		gMode;
 
+		std::mutex* mUsrKey;
+
 	public:
+		Input();
+		Input(NyanIO::Keyset* keyStat, std::mutex* pMutex, const int gMode);
+
 		void listenKeyStat(const int option);
 
 		Keyset getKeyStat();
@@ -40,33 +45,40 @@ namespace NyanIO {
 
 	class Output {
 	private:
-		__int16*	usrNumKey;
-		__int8*		usrCmdKey;
+		Keyset*		keyStat;
 		__int16*	sysNumKey;
 
 		int			gMode;
 		int			tick;
+
 		bool		isTerminated;
 
-		std::vector<std::thread>* hThread{};
+		std::thread**	hKeyThread{};
+		std::thread*	hUsrThread{};
+		std::thread*	hSysThread{};
 
-		std::condition_variable cvUsrKey;
-		std::condition_variable cvCmdKey;
-		std::condition_variable cvSysKey;
-		std::condition_variable cvClock;
+		
+		std::condition_variable*	cvUsrKey;
+		std::condition_variable		cvCmdKey;
+		std::condition_variable*	cvSysKey;
+		std::condition_variable		cvClock;
 
-		std::mutex mGlobTick;
+		std::mutex* mUsrKey;
+		std::mutex	mGlobTick;
 
 	public:
 		Output();
-		Output(NyanIO::Keyset& keyStat);
+		Output(NyanIO::Keyset* keyStat, std::mutex* pMutex, const int gMode);
 
-		void listenKeyStat();
+		void outputFrame();
+
 		void listenSysKeyStat();
 		void listenUsrKeyStat();
 		void listenClock(const int period);
 		void drawKey(const int numKey);
 	};
+
+	void initNyanIO(Input* pInput, Output* pOutput, NyanIO::Keyset* keyStat, std::mutex* pMutex, const int gMode);
 
 	void hideCursor();
 	void moveCursor(const int x, const int y);
