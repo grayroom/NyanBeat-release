@@ -9,35 +9,29 @@
 
 #define NUM_THREAD 16
 
-extern HANDLE hMutex_keyStat;
+extern std::mutex mUsrKey;
 
 int main() {
 	std::vector<fs::path> fileList{ getFiles("../source/sound") };
 	Sound sound{ 3, fileList };
-	hMutex_keyStat = CreateMutex(NULL, FALSE, NULL);
 
-	HANDLE hThread[NUM_THREAD];
-	unsigned threadID{1};
+	std::vector<std::thread> hThread{};
 
-	NyanIO::Input hInput{};
+	NyanIO::Input hInput; // static member of NyanIO::Input class
 	int option{ NYANIO_KEEP };
-	hThread[0] = (HANDLE)_beginthreadex(NULL, 0, NyanIO::Input::listenKeyStat, (void*)&option, 0, &threadID);
-
+	hThread.emplace_back(&NyanIO::Input::listenKeyStat, &hInput, option);
 	sound.PlaySoundNo(0);
 
 	do {
-		WaitForSingleObject(hMutex_keyStat, INFINITE); // critial section control for keyPress 
+		mUsrKey.lock();
 		if (hInput.getKeyStat().numKey != 0) {
 			std::cout << "Current KeySet(num): " << std::bitset<9>(hInput.getKeyStat().numKey) << std::endl;
 		}
 		if (hInput.getKeyStat().cmdKey != 0) {
 			std::cout << "Current KeySet(cmd): " << std::bitset<9>(hInput.getKeyStat().cmdKey) << std::endl;
 		}
-		ReleaseMutex(hMutex_keyStat); // end
+		mUsrKey.unlock();
 	} while (true);
-
-
-	WaitForMultipleObjects(NUM_THREAD, hThread, TRUE, INFINITE);
 
 	return 0;
 }

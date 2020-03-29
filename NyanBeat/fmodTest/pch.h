@@ -2,6 +2,9 @@
 
 #include <Windows.h>
 #include <process.h>
+#include <thread>
+#include <mutex>
+#include <chrono>
 #include <stdarg.h>
 #include <stdlib.h>
 #include <stdio.h>

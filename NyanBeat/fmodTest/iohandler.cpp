@@ -1,20 +1,18 @@
 #include "pch.h"
+
 #include "iohandler.h"
+#include "common.h"
 
-HANDLE hMutex_keyStat;
+std::mutex mUsrKey;
 
-NyanIO::Keyset NyanIO::Input::keyStat;
-
-unsigned __stdcall NyanIO::Input::listenKeyStat(void* arg) {
-	int option{ *(int*)arg };
-
+void NyanIO::Input::listenKeyStat(const int option) {
 	do {
-		Sleep(1);
-		WaitForSingleObject(hMutex_keyStat, INFINITE); // critial section control for argument(keyPress) 
+		std::this_thread::sleep_for(std::chrono::milliseconds(1));
+		mUsrKey.lock();
 		keyStat.numKey = 0;
 		keyStat.cmdKey = 0;
 
-		for (int i = 0; i < 9; ++i) {
+		for (int i = 0; i < gMode; ++i) {
 			if (GetAsyncKeyState(VK_NUMPAD1 + i) & option) {
 				keyStat.numKey |= 0b1 << i;
 			}
@@ -23,45 +21,94 @@ unsigned __stdcall NyanIO::Input::listenKeyStat(void* arg) {
 		if (GetAsyncKeyState(VK_ESCAPE) & option) {
 			keyStat.cmdKey = VK_ESCAPE;
 		}
-		ReleaseMutex(hMutex_keyStat); // end
+		mUsrKey.unlock();
 	} while (true);
-
-	return 0;
 }
 
 NyanIO::Keyset NyanIO::Input::getKeyStat() {
 	return keyStat;
 }
 
-NyanIO::Output::Output()
-	: keyPos{ {1,3}, {2,3}, {3,3}, {1,2}, {2,2}, {3,2}, {1,1}, {2,1}, {3,1} } {}
-
-NyanIO::Output::Output(NyanIO::Keyset& keyStat)
-	: keyPos{ {1,3}, {2,3}, {3,3}, {1,2}, {2,2}, {3,2}, {1,1}, {2,1}, {3,1} } {
-	usrKey = &keyStat.numKey;
-	cmdKey = &keyStat.cmdKey;
+NyanIO::Output::Output() {
+	// ...
 }
 
-void NyanIO::Output::drawSysKey() {
-	for (int i = 0; i < 9; ++i) {
-		if ((*usrKey & 0b000000001 << i) == (0b000000001 << i)) {
-			TerminateThread(hKeyThread[i], 0);
-			hKeyThread[i] = (HANDLE)_beginthreadex(NULL, 0, NyanIO::Output::DrawAnimatedKey, (void*)keyPos[i], 0, &keyTid[i]);
+NyanIO::Output::Output(NyanIO::Keyset& keyStat) {
+	usrNumKey = &keyStat.numKey; // get Input classes' Keystat.numKey
+	usrCmdKey = &keyStat.cmdKey; // get Input classes' Keystat.cmdKey
+
+	hideCursor();
+
+	hThread = new std::vector<std::thread>{ gMode };
+	for (int i = 0; i < gMode; ++i) {
+		hThread->emplace_back(&drawKey, this, i);
+	}
+}
+
+void NyanIO::Output::listenKeyStat() {
+	std::thread hSysKeyThread{ &listenSysKeyStat, this };
+	std::thread hUsrKeyThread{ &listenUsrKeyStat, this };
+	std::thread hClock{ &listenClock, this };
+
+	hSysKeyThread.join();
+	hUsrKeyThread.join();
+}
+
+void NyanIO::Output::listenSysKeyStat() {
+	// ...
+}
+
+void NyanIO::Output::listenUsrKeyStat() {
+	for (int i = 0; i < gMode; ++i) {
+		if ((*usrNumKey | 0b000000001 << i) == (0b000000001 << i)) {
+
+			cvUsrKey.notify_all();
 		}
+
+
+		std::this_thread::sleep_for(std::chrono::milliseconds(1));
 	}
 }
 
-unsigned __stdcall NyanIO::Output::DrawAnimatedKey(void* arg) {
-	int posX{ ((int*)arg)[0] },
-		posY{ ((int*)arg)[1] };
+void NyanIO::Output::listenClock(const int period) {
+	do {
+		std::chrono::system_clock::time_point start = std::chrono::system_clock::now();
+		do { // wait for period(ms)
+			std::this_thread::sleep_for(std::chrono::milliseconds(1));
+		} while (std::chrono::system_clock::now() - start == std::chrono::milliseconds(period));
 
-	for (int i = 0; i < 9; ++i) {
+		mGlobTick.lock();
+		tick = gMode;
+		mGlobTick.unlock();
+
+		cvClock.notify_all();
+	} while (!isTerminated);
+}
+
+void NyanIO::Output::drawKey(const int numKey) {
+	int posX{ numKey % 3 + 1 }, posY{ numKey / 3 + 1 };
+	int currPhase{ gMode };
+	std::chrono::system_clock::time_point start;
+
+	while (!isTerminated) {
+		start = std::chrono::system_clock::now();
+
+		std::unique_lock<std::mutex> mTick(mGlobTick);	// Sync to clock
+		cvClock.wait(mTick, [&] { return tick > 0; });
+		tick--;
+		mTick.unlock();
+		
+		std::unique_lock<std::mutex> mUsrNumKey(mUsrKey);		// Sync to user key
+		cvUsrKey.wait(mUsrNumKey, [&] { return (*usrNumKey | 0b000000001 << numKey) == (0b000000001 << numKey); });
+		*usrNumKey &= ~(0b000000001 << numKey);
+		mUsrNumKey.unlock();
+		
+		currPhase--;
 		moveCursor(posX, posY);
-		std::cout << i;
-		Sleep(500);
-	}
+		std::cout << currPhase;
 
-	return 0;
+		std::this_thread::sleep_until(start + std::chrono::milliseconds(1)); // loop period is 1ms
+	}
 }
 
 void NyanIO::hideCursor() {

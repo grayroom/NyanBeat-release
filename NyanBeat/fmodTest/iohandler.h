@@ -2,11 +2,16 @@
 
 #include "resource.h"
 
+#include <thread>
 
 #define NYANIO_NEVER	0x0000
 #define NYANIO_NOW		0x0001
 #define NYANIO_PAST		0x8000
 #define NYANIO_KEEP		0x8001
+
+#define GMODE_9KEY		9
+#define GMDOE_6KEY		6
+#define GMODE_3KEY		3
 
 namespace NyanIO {
 	struct Keyset {
@@ -24,33 +29,43 @@ namespace NyanIO {
 
 	class Input {
 	private:
-		static Keyset keyStat;
+		Keyset	keyStat;
+		int		gMode;
 
 	public:
-		static unsigned WINAPI listenKeyStat(void* arg);
+		void listenKeyStat(const int option);
 
-		static Keyset getKeyStat();
+		Keyset getKeyStat();
 	};
 
 	class Output {
 	private:
-		__int16*	usrKey;
-		__int8*		cmdKey;
-		__int16*	sysKey;
+		__int16*	usrNumKey;
+		__int8*		usrCmdKey;
+		__int16*	sysNumKey;
 
-		int keyPos[9][2];
+		int			gMode;
+		int			tick;
+		bool		isTerminated;
 
-		HANDLE hKeyThread[9];
-		unsigned keyTid[9];
-		
+		std::vector<std::thread>* hThread{};
+
+		std::condition_variable cvUsrKey;
+		std::condition_variable cvCmdKey;
+		std::condition_variable cvSysKey;
+		std::condition_variable cvClock;
+
+		std::mutex mGlobTick;
 
 	public:
 		Output();
 		Output(NyanIO::Keyset& keyStat);
-		void drawSysKey();
-		void getUsrKey(NyanIO::Keyset& keyStat);
-		static unsigned WINAPI DrawAnimatedKey(void* arg);
-		static unsigned WINAPI listenUsrKey(void* arg);
+
+		void listenKeyStat();
+		void listenSysKeyStat();
+		void listenUsrKeyStat();
+		void listenClock(const int period);
+		void drawKey(const int numKey);
 	};
 
 	void hideCursor();
