@@ -3,127 +3,159 @@
 #include "iohandler.h"
 #include "common.h"
 
-NyanIO::Input::Input() {
-	// ...
+
+NyanIO::Input::Input()
+	:keyUsrStat{ nullptr }, mUsrKey{ nullptr }, gMode{} {}
+
+NyanIO::Input::Input(Keyset* keyStat, mutex* pMutex, vector<conVar*>* cvs, const int gMode)
+	:keyUsrStat{ keyStat }, mUsrKey{ pMutex }, gMode{ gMode } {
+	int i{};
+
+	cvUsrKey = new conVar * [gMode];
+	for (int j = 0; j < gMode; ++i, ++j) {
+		cvUsrKey[j] = cvs->at(i);
+	}
+
+	cvCmdKey = cvs->at(i++);
+
+	cvSysKey = new conVar * [gMode];
+	for (int j = 0; j < gMode; ++i, ++j) {
+		cvSysKey[j] = cvs->at(i);
+	}
+
+	cvClock = cvs->at(i);
 }
 
-NyanIO::Input::Input(NyanIO::Keyset* keyStat, std::mutex* pMutex, const int gMode) {
+void NyanIO::Input::inputFrame() {
+	tKeyListen = new thread{ &listenKeyStat, this };
 
+	tKeyListen->join();
 }
 
 void NyanIO::Input::listenKeyStat(const int option) {
 	do {
-		std::this_thread::sleep_for(std::chrono::milliseconds(1));
+		this_thread::sleep_for(chrono::milliseconds(1));
 		mUsrKey->lock();
-		keyStat->numKey = 0;
-		keyStat->cmdKey = 0;
+		keyUsrStat->numKey = 0;
+		keyUsrStat->cmdKey = 0;
+		mUsrKey->unlock();
 
 		for (int i = 0; i < gMode; ++i) {
 			if (GetAsyncKeyState(VK_NUMPAD1 + i) & option) {
-				keyStat->numKey |= 0b1 << i;
+				mUsrKey->lock();
+				keyUsrStat->numKey |= 0b1 << i;
+				mUsrKey->unlock();
+				cvUsrKey[i]->notify_one();
 			}
 		}
 
 		if (GetAsyncKeyState(VK_ESCAPE) & option) {
-			keyStat->cmdKey = VK_ESCAPE;
+			mUsrKey->lock();
+			keyUsrStat->cmdKey = VK_ESCAPE;
+			mUsrKey->unlock();
+			cvCmdKey->notify_all();
 		}
 		mUsrKey->unlock();
-	} while (true);
+	} while (true); //TODO: 종료조건 정할것
 }
 
 NyanIO::Keyset NyanIO::Input::getKeyStat() {
-	return *keyStat;
+	return *keyUsrStat;
 }
 
-NyanIO::Output::Output()
-	:keyStat{ nullptr }, mUsrKey{ nullptr }, gMode{ 0 } {}
 
-NyanIO::Output::Output(NyanIO::Keyset* keyStat, std::mutex* pMutex, const int gMode)
-	:keyStat{ keyStat }, mUsrKey { pMutex }, gMode{ gMode } {
-	cvUsrKey = new std::condition_variable[gMode];
-	hKeyThread = new std::thread*[gMode];
+NyanIO::Output::Output()
+	:keyUsrStat{ nullptr }, mUsrKey{ nullptr }, gMode{ 0 } {}
+
+NyanIO::Output::Output(Keyset* keyStat, mutex* pMutex, vector<conVar*>* cvs, const int gMode)
+	:keyUsrStat{ keyStat }, mUsrKey { pMutex }, gMode{ gMode } {
+	tKeyDraw = new thread*[gMode];
+	
+	int i{};
+
+	cvUsrKey = new conVar*[gMode];
+	for (int j = 0; j < gMode; ++i, ++j) {
+		cvUsrKey[j] = cvs->at(i);
+	}
+
+	cvCmdKey = cvs->at(i++);
+
+	cvSysKey = new conVar * [gMode];
+	for (int j = 0; j < gMode; ++i, ++j) {
+		cvSysKey[j] = cvs->at(i);
+	}
+
+	cvClock = cvs->at(i);
 
 	hideCursor();
 }
 
 void NyanIO::Output::outputFrame() {
 	for (int i = 0; i < gMode; ++i) {
-		hKeyThread[i] = new std::thread{ &drawKey, this, i };
+		hThreads.push_back(tKeyDraw[i] = new thread{ &drawKey, this, i });
 	}
-	
-	std::thread hSysKeyThread{ &listenSysKeyStat, this };
-	std::thread hUsrKeyThread{ &listenUsrKeyStat, this };
-	std::thread hClock{ &listenClock, this };
 
-	hSysKeyThread.join();
-	hUsrKeyThread.join();
-	hClock.join();
-}
+	//hThreads.push_back(hUsrThread = new thread{ &listenUsrKeyStat, this });
+	//hThreads.push_back(hSysThread = new thread{ &listenSysKeyStat, this });
+	hThreads.push_back(tClock = new thread{ &listenClock, this });
 
-void NyanIO::Output::listenSysKeyStat() {
-	// ...
-}
-
-void NyanIO::Output::listenUsrKeyStat() {
-	for (int i = 0; i < gMode; ++i) {
-		if ((keyStat->numKey | 0b000000001 << i) == (0b000000001 << i)) {
-
-			cvUsrKey[i].notify_one();
-		}
-
-		std::this_thread::sleep_for(std::chrono::milliseconds(1));
+	for (thread* xThread : hThreads) {
+		xThread->join();
 	}
 }
 
-void NyanIO::Output::listenClock(const int period) {
+void NyanIO::Output::listenClock(const int period) { //TDOO: 클록을 모든 개체가 공유하도록 변경해야함
 	do {
-		std::chrono::system_clock::time_point start = std::chrono::system_clock::now();
+		chrono::system_clock::time_point start = chrono::system_clock::now();
 		do { // wait for period(ms)
-			std::this_thread::sleep_for(std::chrono::milliseconds(1));
-		} while (std::chrono::system_clock::now() - start == std::chrono::milliseconds(period));
+			this_thread::sleep_for(chrono::milliseconds(1));
+		} while (chrono::system_clock::now() - start == chrono::milliseconds(period));
 
-		mGlobTick.lock();
+		mGlobTick->lock();
 		tick = gMode;
-		mGlobTick.unlock();
+		mGlobTick->unlock();
 
-		cvClock.notify_all();
+		cvClock->notify_all();
 	} while (!isTerminated);
 }
 
 void NyanIO::Output::drawKey(const int numKey) {
 	int posX{ numKey % 3 + 1 }, posY{ numKey / 3 + 1 };
 	int currPhase{ gMode };
-	std::chrono::system_clock::time_point start;
+	chrono::system_clock::time_point start;
 
 	while (!isTerminated) {
-		std::unique_lock<std::mutex> mUsrNumKey(*mUsrKey);	// Sync to user key
-		cvUsrKey[numKey].wait(mUsrNumKey, [&] { return (keyStat->numKey | 0b000000001 << numKey) == (0b000000001 << numKey); });
-		keyStat->numKey &= ~(0b000000001 << numKey);
+		unique_lock<mutex> mUsrNumKey(*mUsrKey);	// Sync to user key
+		cvUsrKey[numKey]->wait(mUsrNumKey, [&] { return (keyUsrStat->numKey | 0b1 << numKey) == (0b1 << numKey); });
+		keyUsrStat->numKey &= ~(0b1 << numKey);
 		mUsrNumKey.unlock();
 
-		while ((keyStat->numKey | 0b000000001 << numKey) != (0b000000001 << numKey)) { // while no additional key
-			std::unique_lock<std::mutex> mTick(mGlobTick);		// Sync to clock
-			cvClock.wait(mTick, [&] { return tick > 0; });
-			start = std::chrono::system_clock::now();
+		while ((keyUsrStat->numKey | 0b1 << numKey) != (0b1 << numKey)) { // while no additional key
+			unique_lock<mutex> mTick(*mGlobTick);		// Sync to clock
+			cvClock->wait(mTick, [&] { return tick > 0; });
+			start = chrono::system_clock::now();
 			tick--;
 			mTick.unlock();
 
 			currPhase--;
 			moveCursor(posX, posY);
-			std::cout << currPhase;
+			cout << currPhase;
 
-			std::this_thread::sleep_until(start + std::chrono::milliseconds(1)); // loop period is 1ms
+			this_thread::sleep_until(start + chrono::milliseconds(1)); // loop period is 1ms
 		}
 	}
 }
 
 
-void NyanIO::initNyanIO(Input* pInput, Output* pOutput, NyanIO::Keyset* keyStat, std::mutex* pMutex, const int gMode) {
-	keyStat = new NyanIO::Keyset{};
-	pMutex = new std::mutex;
+void NyanIO::initNyanIO(Input* pInput, Output* pOutput, Keyset* keyStat, mutex* pMutex, vector<conVar*>* cvs, const int gMode) {
+	keyStat = new Keyset{};
+	pMutex = new mutex{};
+	for (int i = 0; i < (2 * gMode + 2); ++i) {
+		cvs->push_back( new conVar{} );
+	}
 
-	pInput = new NyanIO::Input{ keyStat, pMutex, gMode };
-	pOutput = new NyanIO::Output{ keyStat, pMutex, gMode };
+	pInput = new Input{ keyStat, pMutex, cvs, gMode };
+	pOutput = new Output{ keyStat, pMutex, cvs, gMode };
 }
 
 void NyanIO::hideCursor() {

@@ -13,6 +13,10 @@
 #define GMDOE_6KEY		6
 #define GMODE_3KEY		3
 
+using namespace std;
+
+typedef condition_variable conVar;
+
 namespace NyanIO {
 	struct Keyset {
 		/*
@@ -29,15 +33,23 @@ namespace NyanIO {
 
 	class Input {
 	private:
-		Keyset*	keyStat;
+		Keyset*	keyUsrStat;
 		int		gMode;
 
-		std::mutex* mUsrKey;
+		thread	*tKeyListen{};
+		
+		conVar	**cvUsrKey;
+		conVar	*cvCmdKey;
+		conVar	**cvSysKey;
+		conVar	*cvClock;
+
+		mutex* mUsrKey;
 
 	public:
 		Input();
-		Input(NyanIO::Keyset* keyStat, std::mutex* pMutex, const int gMode);
+		Input(NyanIO::Keyset* keyStat, mutex* pMutex, vector<conVar*>* cvs, const int gMode);
 
+		void inputFrame();
 		void listenKeyStat(const int option);
 
 		Keyset getKeyStat();
@@ -45,40 +57,40 @@ namespace NyanIO {
 
 	class Output {
 	private:
-		Keyset*		keyStat;
-		__int16*	sysNumKey;
+		Keyset		*keyUsrStat;
+		__int16		*sysNumKey;
 
 		int			gMode;
 		int			tick;
 
 		bool		isTerminated;
 
-		std::thread**	hKeyThread{};
-		std::thread*	hUsrThread{};
-		std::thread*	hSysThread{};
+		vector<thread*> hThreads{};
 
+		thread	**tKeyDraw{};
+		//thread	*hUsrThread{};
+		//thread	*hSysThread{};
+		thread	*tClock{};
 		
-		std::condition_variable*	cvUsrKey;
-		std::condition_variable		cvCmdKey;
-		std::condition_variable*	cvSysKey;
-		std::condition_variable		cvClock;
+		conVar	**cvUsrKey;
+		conVar	*cvCmdKey;
+		conVar	**cvSysKey;
+		conVar	*cvClock;
 
-		std::mutex* mUsrKey;
-		std::mutex	mGlobTick;
+		mutex	*mUsrKey;
+		mutex	*mGlobTick;
 
 	public:
 		Output();
-		Output(NyanIO::Keyset* keyStat, std::mutex* pMutex, const int gMode);
+		Output(NyanIO::Keyset* keyStat, mutex* pMutex, vector<conVar*>* cvs, const int gMode);
 
 		void outputFrame();
 
-		void listenSysKeyStat();
-		void listenUsrKeyStat();
 		void listenClock(const int period);
 		void drawKey(const int numKey);
 	};
 
-	void initNyanIO(Input* pInput, Output* pOutput, NyanIO::Keyset* keyStat, std::mutex* pMutex, const int gMode);
+	void initNyanIO(Input* pInput, Output* pOutput, NyanIO::Keyset* keyStat, mutex* pMutex, vector<conVar*>* cvs, const int gMode);
 
 	void hideCursor();
 	void moveCursor(const int x, const int y);
