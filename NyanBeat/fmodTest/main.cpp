@@ -9,28 +9,35 @@
 
 #define NUM_THREAD 16
 
-extern std::mutex mUsrKey;
-
 int main() {
 	std::vector<fs::path> fileList{ getFiles("../source/sound") };
+	
 	Sound sound{ 3, fileList };
-
-	std::vector<std::thread> hThread{};
-
-	NyanIO::Input hInput; // static member of NyanIO::Input class
-	int option{ NYANIO_KEEP };
-	hThread.emplace_back(&NyanIO::Input::listenKeyStat, &hInput, option);
 	sound.PlaySoundNo(0);
 
+	NyanIO::Input* pInput{};
+	NyanIO::Output* pOutput{};
+	NyanIO::Keyset* pKeySet{};
+	vector<mutex*> hMutex{};
+	vector<conVar*> cvs{};
+
+	NyanIO::initNyanIO(pInput, pOutput, pKeySet, hMutex, cvs, GMODE_9KEY);
+
+	vector<thread*> hThreads{};
+	hThreads.push_back(new thread{ &NyanIO::Input::inputFrame, &*pInput, 200 });
+	hThreads.push_back(new thread{ &NyanIO::Output::outputFrame, &*pOutput });
+
+	for (thread* xThread : hThreads) {
+		xThread->join();
+	}
+
 	do {
-		mUsrKey.lock();
-		if (hInput.getKeyStat().numKey != 0) {
-			std::cout << "Current KeySet(num): " << std::bitset<9>(hInput.getKeyStat().numKey) << std::endl;
+		if (pInput->getKeyStat()->numKey != 0) {
+			std::cout << "Current KeySet(num): " << std::bitset<9>(pInput->getKeyStat()->numKey) << std::endl;
 		}
-		if (hInput.getKeyStat().cmdKey != 0) {
-			std::cout << "Current KeySet(cmd): " << std::bitset<9>(hInput.getKeyStat().cmdKey) << std::endl;
+		if (pInput->getKeyStat()->cmdKey != 0) {
+			std::cout << "Current KeySet(cmd): " << std::bitset<9>(pInput->getKeyStat()->cmdKey) << std::endl;
 		}
-		mUsrKey.unlock();
 	} while (true);
 
 	return 0;

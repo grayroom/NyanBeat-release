@@ -36,61 +36,66 @@ namespace NyanIO {
 		Keyset*	keyUsrStat;
 		int		gMode;
 
-		thread	*tKeyListen{};
-		
-		conVar	**cvUsrKey;
-		conVar	*cvCmdKey;
-		conVar	**cvSysKey;
-		conVar	*cvClock;
+		bool		isTerminated;
 
-		mutex* mUsrKey;
+		thread*	tKeyListen{};
+		thread*	tClock{};
+		
+		conVar**	cvUsrKey;
+		conVar*		cvCmdKey;
+		conVar**	cvSysKey;
+		conVar*		cvClock;
+
+		mutex*	mUsrKey;
+		mutex*	mSysKey;
 
 	public:
 		Input();
-		Input(NyanIO::Keyset* keyStat, mutex* pMutex, vector<conVar*>* cvs, const int gMode);
+		Input(NyanIO::Keyset*& keyStat, vector<mutex*>& hMutex, vector<conVar*>& cvs, const int gMode);
 
-		void inputFrame();
+		void inputFrame(const int period);
 		void listenKeyStat(const int option);
+		void listenClock(const int clock);
 
-		Keyset getKeyStat();
+		Keyset* getKeyStat();
 	};
 
 	class Output {
 	private:
-		Keyset		*keyUsrStat;
-		__int16		*sysNumKey;
+		Keyset*		keyUsrStat;
+		__int16*	sysNumKey;
 
 		int			gMode;
 		int			tick;
 
 		bool		isTerminated;
 
-		vector<thread*> hThreads{};
-
-		thread	**tKeyDraw{};
-		//thread	*hUsrThread{};
-		//thread	*hSysThread{};
-		thread	*tClock{};
+		// thread handles
+		vector<thread*>	hThreads{};
+		thread**	tKeyDraw{};
 		
-		conVar	**cvUsrKey;
-		conVar	*cvCmdKey;
-		conVar	**cvSysKey;
-		conVar	*cvClock;
+		// condition variables
+		conVar**	cvUsrKey;
+		conVar*		cvCmdKey;
+		conVar**	cvSysKey;
+		conVar*		cvClock;
 
-		mutex	*mUsrKey;
-		mutex	*mGlobTick;
+		// mutexes
+		vector<mutex*> hMutex{};
+		mutex*	mUsrKey;
+		mutex*	mSysKey;
+		mutex*	mKeyDraw;
 
 	public:
 		Output();
-		Output(NyanIO::Keyset* keyStat, mutex* pMutex, vector<conVar*>* cvs, const int gMode);
+		Output(NyanIO::Keyset*& keyStat, vector<mutex*>& hMutex, vector<conVar*>& cvs, const int gMode);
 
 		void outputFrame();
 
-		void listenClock(const int period);
 		void drawKey(const int numKey);
 	};
 
-	void initNyanIO(Input* pInput, Output* pOutput, NyanIO::Keyset* keyStat, mutex* pMutex, vector<conVar*>* cvs, const int gMode);
+	void initNyanIO(Input*& pInput, Output*& pOutput, NyanIO::Keyset*& keyStat, vector<mutex*>& hMutex, vector<conVar*>& cvs, const int gMode);
 
 	void hideCursor();
 	void moveCursor(const int x, const int y);
