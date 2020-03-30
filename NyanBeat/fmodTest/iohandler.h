@@ -66,13 +66,15 @@ namespace NyanIO {
 		__int16*	sysNumKey;
 
 		int			gMode;
-		int			tick;
+
+		int*		keyPhase;
 
 		bool		isTerminated;
 
 		// thread handles
 		vector<thread*>	hThreads{};
 		thread**	tKeyDraw{};
+
 		
 		// condition variables
 		conVar**	cvUsrKey;

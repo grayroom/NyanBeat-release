@@ -15,17 +15,17 @@ NyanIO::Input::Input(Keyset*& keyStat, vector<mutex*>& hMutex, vector<conVar*>& 
 	int i{};
 	cvUsrKey = new conVar * [gMode];
 	for (int j = 0; j < gMode; ++i, ++j) {
-		cvUsrKey[j] = cvs.at(i);
+		cvUsrKey[j] = cvs[i];
 	}
 
-	cvCmdKey = cvs.at(i++);
+	cvCmdKey = cvs[i++];
 
 	cvSysKey = new conVar * [gMode];
 	for (int j = 0; j < gMode; ++i, ++j) {
-		cvSysKey[j] = cvs.at(i);
+		cvSysKey[j] = cvs[i];
 	}
 
-	cvClock = cvs.at(i);
+	cvClock = cvs[i];
 }
 
 void NyanIO::Input::inputFrame(const int period) {
@@ -86,6 +86,8 @@ NyanIO::Output::Output(Keyset*& keyStat, vector<mutex*>& hMutex, vector<conVar*>
 	mUsrKey = hMutex[0];
 	mSysKey = hMutex[1];
 	mKeyDraw = new mutex{};
+
+	keyPhase = new int{ gMode };
 	
 	int i{};
 
@@ -119,8 +121,7 @@ void NyanIO::Output::outputFrame() {
 }
 
 void NyanIO::Output::drawKey(const int numKey) {
-	int posX{ numKey % 3 + 1 }, posY{ numKey / 3 + 1 };
-	int currPhase{};
+	int posX{ numKey % 3 + 1 }, posY{ 3 - numKey / 3 };
 	chrono::system_clock::time_point start;
 
 	while (!isTerminated) {
@@ -129,17 +130,18 @@ void NyanIO::Output::drawKey(const int numKey) {
 		keyUsrStat->numKey &= ~(0b1 << numKey);		// resolve key-on status
 		mUsrNumKey.unlock();						// check
 
-		currPhase = gMode;
+		keyPhase[numKey] = gMode;
 
-		while ((keyUsrStat->numKey & (0b1 << numKey)) != (0b1 << numKey)) {	// while no additional key
+		while ((keyUsrStat->numKey & (0b1 << numKey)) != (0b1 << numKey) && keyPhase[numKey] >= 0) {	// while no additional key
 			unique_lock<mutex> mTick(*mKeyDraw);	// Sync to clock
-			cvClock->wait(mTick, [&] { return tick > 0; }); //TODO: 여기조건부터 수정시작!
-			start = chrono::system_clock::now();
+			cvClock->wait(mTick);
 			mTick.unlock();	// check
+			start = chrono::system_clock::now();
 
-			currPhase--;	// draw current phase
-			moveCursor(posX, posY);
-			cout << currPhase;
+			//FIXME: 한번에 여러 스레드가 접근해서 올바른 출력이 되지 않음. 출력버퍼를 구현하여 한번에 출력되도록 할 것.
+			moveCursor(3*posX, 3*posY);
+
+			cout << keyPhase[numKey]--;
 
 			this_thread::sleep_until(start + chrono::milliseconds(1)); // loop period is 1ms
 		}

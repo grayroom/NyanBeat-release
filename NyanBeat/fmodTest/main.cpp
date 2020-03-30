@@ -31,14 +31,14 @@ int main() {
 		xThread->join();
 	}
 
-	do {
+	/*do {
 		if (pInput->getKeyStat()->numKey != 0) {
 			std::cout << "Current KeySet(num): " << std::bitset<9>(pInput->getKeyStat()->numKey) << std::endl;
 		}
 		if (pInput->getKeyStat()->cmdKey != 0) {
 			std::cout << "Current KeySet(cmd): " << std::bitset<9>(pInput->getKeyStat()->cmdKey) << std::endl;
 		}
-	} while (true);
+	} while (true);*/
 
 	return 0;
 }
