@@ -1,0 +1,17 @@
+{
+	"folders": [
+		{
+			"path": "."
+		},
+		{
+			"path": "NyanBeat\\fmodTest"
+		},
+		{
+			"path": "NyanBeat\\NyanBeat"
+		},
+		{
+			"path": "NyanBeat\\source"
+		}
+	],
+	"settings": {}
+}
