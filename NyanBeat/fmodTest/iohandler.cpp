@@ -5,56 +5,55 @@
 
 
 Nyan::Input::Input()
-	:usrKeyStat{ nullptr }, mUsrKey{ nullptr }, gMode{} {}
+	: gMode{ 0 }, isTerminated{ false } {
+	usrKey = 0;
+	sysKey = 0;
+}
 
 Nyan::Input::Input(const int gMode)
-	: gMode{ gMode }, isTerminated{ false }, tKeyListen{ nullptr }, tClkListen{ nullptr } {
-	usrKeyStat = new KeySet;
-	sysNumStat = new __int16;
-
-	cvUsrKey = new conVar * [gMode];
-	for (int i = 0; i < gMode; ++i) {
-		cvUsrKey[i] = new conVar;
-	}
-	cvCmdKey = new conVar;
-	cvSysKey = new conVar * [gMode];
-	for (int i = 0; i < gMode; ++i) {
-		cvSysKey[i] = new conVar;
-	}
-	cvClock = new conVar;
-
-	mUsrKey = new mutex;
-	mSysKey = new mutex;
+	: gMode{ gMode }, isTerminated{ false } {
+	usrKey = 0;
+	sysKey = 0;
 }
 
-void Nyan::Input::inputFrame(const int period) {
-	tKeyListen = new thread{ &Nyan::Input::listenKeyStat, this, NYANIO_PAST };
-	tClkListen = new thread{ &Nyan::Input::listenClock, this, period };
-
-	tKeyListen->join();
-	tClkListen->join();
+Nyan::KeySet*& Nyan::Input::getUsrKey() {
+	return usrKey;
 }
 
-void Nyan::Input::listenKeyStat(const int option) {
+void Nyan::Input::setUsrKey(KeySet*& usrKey) {
+	this->usrKey = usrKey;
+}
+
+Nyan::KeySet*& Nyan::Input::getSysKey() {
+	return sysKey;
+}
+
+void Nyan::Input::setSysKey(KeySet*& sysKey) {
+	this->sysKey = sysKey;
+}
+
+void Nyan::Input::listenUsrKey(const int opt, mutex*& mUsrKey, conVar**& cvNumKey, conVar*& cvCmdKey) {
+	chrono::system_clock::time_point start{};
+
 	do {
-		chrono::system_clock::time_point start = chrono::system_clock::now();
+		start = chrono::system_clock::now();
 		mUsrKey->lock();
-		usrKeyStat->numKey = 0;
-		usrKeyStat->cmdKey = 0;
+		usrKey->numKey = 0;
+		usrKey->cmdKey = 0;
 		mUsrKey->unlock();
 
 		for (int i = 0; i < gMode; ++i) {
-			if (GetAsyncKeyState(VK_NUMPAD1 + i) & option) {
+			if (GetAsyncKeyState(VK_NUMPAD1 + i) & opt) {
 				mUsrKey->lock();
-				usrKeyStat->numKey |= 0b1 << i;
+				usrKey->numKey |= 0b1 << i;
 				mUsrKey->unlock();
-				cvUsrKey[i]->notify_one();
+				cvNumKey[i]->notify_one();
 			}
 		}
 
-		if (GetAsyncKeyState(VK_ESCAPE) & option) {
+		if (GetAsyncKeyState(VK_ESCAPE) & opt) {
 			mUsrKey->lock();
-			usrKeyStat->cmdKey = VK_ESCAPE;
+			usrKey->cmdKey = VK_ESCAPE;
 			mUsrKey->unlock();
 			cvCmdKey->notify_all();
 		}
@@ -62,51 +61,47 @@ void Nyan::Input::listenKeyStat(const int option) {
 	} while (!isTerminated);
 }
 
-void Nyan::Input::listenClock(const int period) {
+void Nyan::Input::listenSysKey(fs::path noteDir, mutex*& mSysKey, conVar*& cvNumKey) {
+	fstream noteStream{ noteDir, ios::binary | ios::in };
+	chrono::system_clock::time_point start{};
+
+	// period, gMode데이터를 읽어옴
+	int periodRef, gModeRef;
+	noteStream >> periodRef >> gModeRef;
 	do {
-		chrono::system_clock::time_point start = chrono::system_clock::now();
-		do { // wait for period(ms)
-			this_thread::sleep_for(chrono::milliseconds(1));
-		} while (chrono::system_clock::now() - start < chrono::milliseconds(period));
+		start = chrono::system_clock::now();
 
-		cvClock->notify_all();
+		mSysKey->lock();
+		noteStream >> sysKey->numKey;
+		mSysKey->unlock();
+
+		this_thread::sleep_until(start + chrono::milliseconds(periodRef));
 	} while (!isTerminated);
-}
-
-Nyan::KeySet* Nyan::Input::getKeyStat() {
-	return usrKeyStat;
 }
 
 // --------------------------------------------------------------------------------------------
 
-
 Nyan::IOHandler::IOHandler()
-	: Input(), tKeyHandle{ nullptr } {}
+	: gMode{ 0 }, isTerminated{ false } {
+	usrKey = 0;
+	sysKey = 0;
+}
 
 Nyan::IOHandler::IOHandler(const int gMode)
-	: Input(gMode), tKeyHandle{ nullptr } {
+	: gMode{ gMode }, isTerminated{ false } {
+	usrKey = 0;
+	sysKey = 0;
 
 	hideCursor(); // Optional
 }
 
-void Nyan::IOHandler::ioFrame() {
-	tKeyHandle = new thread * [gMode];
-	for (int i = 0; i < gMode; ++i) {
-		tKeyHandle[i] = new thread{ &Nyan::IOHandler::drawKey, this, i };
-	}
-
-	for (int i = 0; i < gMode; ++i) {
-		tKeyHandle[i]->join();
-	}
-}
-
-void Nyan::IOHandler::drawKey(const int numKey) {
+void Nyan::IOHandler::drawKey(const int numKey, mutex*& mUsrKey, conVar**& cvNumKey, conVar*& cvCmdKey) {
 	int posX{ numKey % 3 + 1 }, posY{ 3 - numKey / 3 };
 
 	while (!isTerminated) {
-		unique_lock<mutex> mUsrNumKey(*mUsrKey);	// Sync to user key
-		cvUsrKey[numKey]->wait(mUsrNumKey, [&] { return (usrKeyStat->numKey & (0b1 << numKey)) == (0b1 << numKey); });
-		// push to output buffer
+		unique_lock<mutex> mUsrNumKey(*mUsrKey); // Sync to user key
+		cvNumKey[numKey]->wait(mUsrNumKey, [&] { return (usrKey->numKey & (0b1 << numKey)) == (0b1 << numKey); });
+		//TODO: push to output buffer
 		mUsrNumKey.unlock();
 	}
 }

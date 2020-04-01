@@ -32,51 +32,41 @@ namespace Nyan {
 	};
 
 	class Input {
-	protected:
-		KeySet*		usrKeyStat;
-		__int16*	sysNumStat;
+	private:
+		KeySet* usrKey;
+		KeySet* sysKey;
 
-		int			gMode;
+		int		gMode;
 
-		bool		isTerminated;
-
-		// thread handle
-		thread*		tKeyListen;
-		thread*		tClkListen;
-
-		// condition variables
-		conVar**	cvUsrKey;
-		conVar*		cvCmdKey;
-		conVar**	cvSysKey;
-		conVar*		cvClock;
-
-		// mutexes
-		mutex*		mUsrKey;
-		mutex*		mSysKey;
+		bool	isTerminated;
 
 	public:
 		Input();
 		Input(const int gMode);
 
-		void inputFrame(const int period);
-		void listenKeyStat(const int option);
-		void listenClock(const int clock);
+		KeySet*&	getUsrKey();
+		void		setUsrKey(KeySet*& keySet);
+		KeySet*&	getSysKey();
+		void		setSysKey(KeySet*& keySet);
 
-		KeySet* getKeyStat();
+		void		listenUsrKey(const int opt, mutex*& mUsrKey, conVar**& cvNumKey, conVar*& cvCmdKey);
+		void		listenSysKey(fs::path noteDir, mutex*& mSysKey, conVar*& cvNumKey);
 	};
 
-	class IOHandler : protected Input, protected Output {
+	class IOHandler{
 	private:
-		// thread handle
-		thread**	tKeyHandle;
+		KeySet* usrKey;
+		KeySet* sysKey;
+
+		int			gMode;
+
+		bool		isTerminated;
 
 	public:
 		IOHandler();
 		IOHandler(const int gMode);
 
-		void ioFrame();
-
-		void drawKey(const int numKey);
+		void drawKey(const int numKey, mutex*& mUsrKey, conVar**& cvNumKey, conVar*& cvCmdKey);
 	};
 
 	class Output {

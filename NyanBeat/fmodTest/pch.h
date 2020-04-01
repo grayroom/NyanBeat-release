@@ -12,6 +12,7 @@
 #include <filesystem>
 #include <vector>
 #include <bitset>
+#include <fstream>
 
 #include <fmod.hpp>
 #include <fmod_errors.h>
