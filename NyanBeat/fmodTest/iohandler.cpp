@@ -13,6 +13,12 @@ Nyan::KeyHandler::KeyHandler() {
 	sysKey->cmdKey = 0;
 }
 
+Nyan::KeyHandler::KeyHandler(KeySet*& usrKey, KeySet*& sysKey) 
+	: KeyHandler() {
+	this->usrKey = usrKey;
+	this->usrKey = sysKey;
+}
+
 Nyan::KeySet*& Nyan::KeyHandler::getUsrKey() {
 	return usrKey;
 }
@@ -36,6 +42,9 @@ Nyan::Input::Input()
 
 Nyan::Input::Input(const int gMode)
 	: KeyHandler(), gMode { gMode }, isTerminated{ false } {}
+
+Nyan::Input::Input(const int gMode, KeySet*& usrKey, KeySet*& sysKey)
+	: KeyHandler(usrKey, sysKey), gMode{ gMode } {}
 
 void Nyan::Input::listenUsrKey(const int opt, mutex*& mUsrKey, conVar**& cvNumKey, conVar*& cvCmdKey) {
 	chrono::system_clock::time_point start{};
@@ -78,7 +87,7 @@ void Nyan::Input::listenSysKey(fs::path noteDir, mutex*& mSysKey, conVar**& cvNu
 		// 예외처리
 	}
 
-	// period를 넘겨줘야 할까?
+	// period를 IOHandler또는 Output에게 넘겨줘야 할까?
 
 	do { // 값을 일정시간 먼저 읽어와야함!!
 		start = chrono::system_clock::now();
@@ -102,6 +111,11 @@ Nyan::IOHandler::IOHandler()
 	: KeyHandler(), gMode{ 0 }, isTerminated{ false } {}
 
 Nyan::IOHandler::IOHandler(const int gMode)
+	: KeyHandler(), gMode{ gMode }, isTerminated{ false } {
+	hideCursor(); // optional
+}
+
+Nyan::IOHandler::IOHandler(const int gMode, KeySet*& usrKey, KeySet*& sysKey)
 	: KeyHandler(), gMode{ gMode }, isTerminated{ false } {
 	hideCursor(); // optional
 }

@@ -2,8 +2,6 @@
 
 #include "resource.h"
 
-#include <thread>
-
 #define NYANIO_NEVER	0x0000
 #define NYANIO_NOW		0x0001
 #define NYANIO_PAST		0x8000
@@ -38,6 +36,7 @@ namespace Nyan {
 
 	public:
 		KeyHandler();
+		KeyHandler(KeySet*& usrKey, KeySet*& sysKey);
 
 		KeySet*&	getUsrKey();
 		void		setUsrKey(KeySet*& keySet);
@@ -45,7 +44,7 @@ namespace Nyan {
 		void		setSysKey(KeySet*& keySet);
 	};
 
-	class Input : protected KeyHandler {
+	class Input : public KeyHandler {
 	private:
 
 		int		gMode;
@@ -55,6 +54,7 @@ namespace Nyan {
 	public:
 		Input();
 		Input(const int gMode);
+		Input(const int gMode, KeySet*& usrKey, KeySet*& sysKey);
 
 		// virtual함수를 선언해야하나
 
@@ -70,7 +70,7 @@ namespace Nyan {
 		Output();
 	};
 
-	class IOHandler : protected KeyHandler {
+	class IOHandler : public KeyHandler {
 	private:
 		int			gMode;
 
@@ -79,6 +79,7 @@ namespace Nyan {
 	public:
 		IOHandler();
 		IOHandler(const int gMode);
+		IOHandler(const int gMode, KeySet*& usrKey, KeySet*& sysKey);
 
 		// virtual함수를 선언해야하나
 

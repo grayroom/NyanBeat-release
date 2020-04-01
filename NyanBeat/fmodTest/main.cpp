@@ -5,27 +5,29 @@
 #include "sound.h"
 
 #define TRACK 3
-#define TRACK_SIZE 256
+#define GMODE 9
 
-#define NUM_THREAD 16
+
 
 int main() {
 	std::vector<fs::path> fileList{ getFiles("../source/sound") };
 	
-	Sound sound{ 3, fileList };
+	Sound sound{ TRACK, fileList };
 	sound.PlaySoundNo(0);
 
-	Nyan::Input* pInput{};
-	Nyan::IOHandler* pOutput{};
-	Nyan::KeySet* pKeySet{};
-	vector<mutex*> hMutex{};
-	vector<conVar*> cvs{};
+	Nyan::Input* pInput{ new Nyan::Input{GMODE} };
+	Nyan::IOHandler* pIOHandler{ new Nyan::IOHandler{GMODE, pInput->getUsrKey(), pInput->getSysKey()} };
 
-	Nyan::initNyanIO(pInput, pOutput, pKeySet, hMutex, cvs, GMODE_9KEY);
+	mutex* mUsrKey{ new mutex },
+		* mSysKey{ new mutex };
 
-	vector<thread*> hThreads{};
-	hThreads.push_back(new thread{ &Nyan::Input::inputFrame, &*pInput, 200 });
-	hThreads.push_back(new thread{ &Nyan::IOHandler::ioFrame, &*pOutput });
+	conVar** cvUsrNumKey{},
+		** cvSysNumKey{},
+		* cvUsrCmdKey{};
+
+	thread** hListenKey{ new thread * [2] };
+	hListenKey[0] = new thread{ &Nyan::Input::listenUsrKey, pInput , NYANIO_NOW, mUsrKey, cvUsrNumKey, cvUsrCmdKey};
+	//hListenKey[1] = new thread{ &Nyan::Input::listenSysKey, pIOHandler, /*path argument*/, mSysKey, cvSysNumKey};
 
 	for (thread* xThread : hThreads) {
 		xThread->join();
