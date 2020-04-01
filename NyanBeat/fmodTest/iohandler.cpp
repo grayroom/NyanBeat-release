@@ -61,13 +61,20 @@ void Nyan::Input::listenUsrKey(const int opt, mutex*& mUsrKey, conVar**& cvNumKe
 	} while (!isTerminated);
 }
 
-void Nyan::Input::listenSysKey(fs::path noteDir, mutex*& mSysKey, conVar*& cvNumKey) {
+void Nyan::Input::listenSysKey(fs::path noteDir, mutex*& mSysKey, conVar**& cvNumKey) {
 	fstream noteStream{ noteDir, ios::binary | ios::in };
 	chrono::system_clock::time_point start{};
 
 	// period, gMode데이터를 읽어옴
 	int periodRef, gModeRef;
 	noteStream >> periodRef >> gModeRef;
+
+	if (gMode != gModeRef) {
+		// 예외처리
+	}
+
+	// period를 넘겨줘야 할까?
+
 	do {
 		start = chrono::system_clock::now();
 
@@ -75,11 +82,16 @@ void Nyan::Input::listenSysKey(fs::path noteDir, mutex*& mSysKey, conVar*& cvNum
 		noteStream >> sysKey->numKey;
 		mSysKey->unlock();
 
+		for (int i = 0; i < gMode; ++i) {
+			if ((sysKey->numKey & (0b1 << i)) == (0b1 << i)) {
+				cvNumKey[i]->notify_one();
+			}
+		}
 		this_thread::sleep_until(start + chrono::milliseconds(periodRef));
 	} while (!isTerminated);
 }
 
-// --------------------------------------------------------------------------------------------
+// ------------------------------------------------------------------------------------------------
 
 Nyan::IOHandler::IOHandler()
 	: gMode{ 0 }, isTerminated{ false } {
@@ -95,13 +107,16 @@ Nyan::IOHandler::IOHandler(const int gMode)
 	hideCursor(); // Optional
 }
 
+//TODO: sysKey와 usrKey를 동시에 출력할 방법을 생각해보자
 void Nyan::IOHandler::drawKey(const int numKey, mutex*& mUsrKey, conVar**& cvNumKey, conVar*& cvCmdKey) {
 	int posX{ numKey % 3 + 1 }, posY{ 3 - numKey / 3 };
 
 	while (!isTerminated) {
 		unique_lock<mutex> mUsrNumKey(*mUsrKey); // Sync to user key
 		cvNumKey[numKey]->wait(mUsrNumKey, [&] { return (usrKey->numKey & (0b1 << numKey)) == (0b1 << numKey); });
+		
 		//TODO: push to output buffer
+		
 		mUsrNumKey.unlock();
 	}
 }

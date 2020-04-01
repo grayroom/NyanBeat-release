@@ -50,7 +50,7 @@ namespace Nyan {
 		void		setSysKey(KeySet*& keySet);
 
 		void		listenUsrKey(const int opt, mutex*& mUsrKey, conVar**& cvNumKey, conVar*& cvCmdKey);
-		void		listenSysKey(fs::path noteDir, mutex*& mSysKey, conVar*& cvNumKey);
+		void		listenSysKey(fs::path noteDir, mutex*& mSysKey, conVar**& cvNumKey);
 	};
 
 	class IOHandler{
