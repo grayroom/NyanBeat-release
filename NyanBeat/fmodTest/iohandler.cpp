@@ -59,10 +59,10 @@ void Nyan::Input::listenKeyStat(const int option) {
 			cvCmdKey->notify_all();
 		}
 		this_thread::sleep_until(start + chrono::milliseconds(1));
-	} while (true); //TODO: 종료조건 정할것
+	} while (!isTerminated);
 }
 
-void Nyan::Input::listenClock(const int period) { //TDOO: 클록을 모든 개체가 공유하도록
+void Nyan::Input::listenClock(const int period) {
 	do {
 		chrono::system_clock::time_point start = chrono::system_clock::now();
 		do { // wait for period(ms)
@@ -77,30 +77,31 @@ Nyan::KeySet* Nyan::Input::getKeyStat() {
 	return usrKeyStat;
 }
 
+// --------------------------------------------------------------------------------------------
+
 
 Nyan::IOHandler::IOHandler()
-	: Input(), tKeyDraw{ nullptr } {}
+	: Input(), tKeyHandle{ nullptr } {}
 
 Nyan::IOHandler::IOHandler(const int gMode)
-	: Input(gMode), tKeyDraw{ nullptr } {
+	: Input(gMode), tKeyHandle{ nullptr } {
 
 	hideCursor(); // Optional
 }
 
-void Nyan::IOHandler::outputFrame() {
-	tKeyDraw = new thread * [gMode];
+void Nyan::IOHandler::ioFrame() {
+	tKeyHandle = new thread * [gMode];
 	for (int i = 0; i < gMode; ++i) {
-		tKeyDraw[i] = new thread{ &Nyan::IOHandler::drawKey, this, i };
+		tKeyHandle[i] = new thread{ &Nyan::IOHandler::drawKey, this, i };
 	}
 
 	for (int i = 0; i < gMode; ++i) {
-		tKeyDraw[i]->join();
+		tKeyHandle[i]->join();
 	}
 }
 
 void Nyan::IOHandler::drawKey(const int numKey) {
 	int posX{ numKey % 3 + 1 }, posY{ 3 - numKey / 3 };
-	chrono::system_clock::time_point start;
 
 	while (!isTerminated) {
 		unique_lock<mutex> mUsrNumKey(*mUsrKey);	// Sync to user key

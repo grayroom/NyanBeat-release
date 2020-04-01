@@ -65,26 +65,26 @@ namespace Nyan {
 		KeySet* getKeyStat();
 	};
 
-	class IOHandler : protected Input {
+	class IOHandler : protected Input, protected Output {
 	private:
 		// thread handle
-		thread**	tKeyDraw;
+		thread**	tKeyHandle;
 
 	public:
 		IOHandler();
 		IOHandler(const int gMode);
 
-		void outputFrame();
+		void ioFrame();
 
 		void drawKey(const int numKey);
 	};
 
-	class Screen {
+	class Output {
 	private:
 		__int8**	keyStat{};
 
 	public:
-		Screen();
+		Output();
 	};
 
 	void hideCursor();

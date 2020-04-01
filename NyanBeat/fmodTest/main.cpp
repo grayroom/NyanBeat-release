@@ -25,7 +25,7 @@ int main() {
 
 	vector<thread*> hThreads{};
 	hThreads.push_back(new thread{ &Nyan::Input::inputFrame, &*pInput, 200 });
-	hThreads.push_back(new thread{ &Nyan::IOHandler::outputFrame, &*pOutput });
+	hThreads.push_back(new thread{ &Nyan::IOHandler::ioFrame, &*pOutput });
 
 	for (thread* xThread : hThreads) {
 		xThread->join();
