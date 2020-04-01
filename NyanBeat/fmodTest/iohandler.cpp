@@ -4,33 +4,38 @@
 #include "common.h"
 
 
-Nyan::Input::Input()
-	: gMode{ 0 }, isTerminated{ false } {
-	usrKey = 0;
-	sysKey = 0;
+// ------------------------------------------------------------------------------------------------
+
+Nyan::KeyHandler::KeyHandler() {
+	usrKey->numKey = 0;
+	usrKey->cmdKey = 0;
+	sysKey->numKey = 0;
+	sysKey->cmdKey = 0;
 }
 
-Nyan::Input::Input(const int gMode)
-	: gMode{ gMode }, isTerminated{ false } {
-	usrKey = 0;
-	sysKey = 0;
-}
-
-Nyan::KeySet*& Nyan::Input::getUsrKey() {
+Nyan::KeySet*& Nyan::KeyHandler::getUsrKey() {
 	return usrKey;
 }
 
-void Nyan::Input::setUsrKey(KeySet*& usrKey) {
+void Nyan::KeyHandler::setUsrKey(KeySet*& usrKey) {
 	this->usrKey = usrKey;
 }
 
-Nyan::KeySet*& Nyan::Input::getSysKey() {
+Nyan::KeySet*& Nyan::KeyHandler::getSysKey() {
 	return sysKey;
 }
 
-void Nyan::Input::setSysKey(KeySet*& sysKey) {
+void Nyan::KeyHandler::setSysKey(KeySet*& sysKey) {
 	this->sysKey = sysKey;
 }
+
+// ------------------------------------------------------------------------------------------------
+
+Nyan::Input::Input()
+	: KeyHandler(), gMode{ 0 }, isTerminated{ false } {}
+
+Nyan::Input::Input(const int gMode)
+	: KeyHandler(), gMode { gMode }, isTerminated{ false } {}
 
 void Nyan::Input::listenUsrKey(const int opt, mutex*& mUsrKey, conVar**& cvNumKey, conVar*& cvCmdKey) {
 	chrono::system_clock::time_point start{};
@@ -75,7 +80,7 @@ void Nyan::Input::listenSysKey(fs::path noteDir, mutex*& mSysKey, conVar**& cvNu
 
 	// period를 넘겨줘야 할까?
 
-	do {
+	do { // 값을 일정시간 먼저 읽어와야함!!
 		start = chrono::system_clock::now();
 
 		mSysKey->lock();
@@ -94,17 +99,11 @@ void Nyan::Input::listenSysKey(fs::path noteDir, mutex*& mSysKey, conVar**& cvNu
 // ------------------------------------------------------------------------------------------------
 
 Nyan::IOHandler::IOHandler()
-	: gMode{ 0 }, isTerminated{ false } {
-	usrKey = 0;
-	sysKey = 0;
-}
+	: KeyHandler(), gMode{ 0 }, isTerminated{ false } {}
 
 Nyan::IOHandler::IOHandler(const int gMode)
-	: gMode{ gMode }, isTerminated{ false } {
-	usrKey = 0;
-	sysKey = 0;
-
-	hideCursor(); // Optional
+	: KeyHandler(), gMode{ gMode }, isTerminated{ false } {
+	hideCursor(); // optional
 }
 
 //TODO: sysKey와 usrKey를 동시에 출력할 방법을 생각해보자
@@ -120,6 +119,12 @@ void Nyan::IOHandler::drawKey(const int numKey, mutex*& mUsrKey, conVar**& cvNum
 		mUsrNumKey.unlock();
 	}
 }
+
+// ------------------------------------------------------------------------------------------------
+
+
+
+// ------------------------------------------------------------------------------------------------
 
 void Nyan::hideCursor() {
 	CONSOLE_CURSOR_INFO cursor{};

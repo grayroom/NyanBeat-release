@@ -31,10 +31,22 @@ namespace Nyan {
 		__int8 cmdKey = 0;
 	};
 
-	class Input {
-	private:
+	class KeyHandler {
+	protected:
 		KeySet* usrKey;
 		KeySet* sysKey;
+
+	public:
+		KeyHandler();
+
+		KeySet*&	getUsrKey();
+		void		setUsrKey(KeySet*& keySet);
+		KeySet*&	getSysKey();
+		void		setSysKey(KeySet*& keySet);
+	};
+
+	class Input : protected KeyHandler {
+	private:
 
 		int		gMode;
 
@@ -44,20 +56,22 @@ namespace Nyan {
 		Input();
 		Input(const int gMode);
 
-		KeySet*&	getUsrKey();
-		void		setUsrKey(KeySet*& keySet);
-		KeySet*&	getSysKey();
-		void		setSysKey(KeySet*& keySet);
+		// virtual함수를 선언해야하나
 
-		void		listenUsrKey(const int opt, mutex*& mUsrKey, conVar**& cvNumKey, conVar*& cvCmdKey);
-		void		listenSysKey(fs::path noteDir, mutex*& mSysKey, conVar**& cvNumKey);
+		void	listenUsrKey(const int opt, mutex*& mUsrKey, conVar**& cvNumKey, conVar*& cvCmdKey);
+		void	listenSysKey(fs::path noteDir, mutex*& mSysKey, conVar**& cvNumKey);
 	};
 
-	class IOHandler{
+	class Output {
 	private:
-		KeySet* usrKey;
-		KeySet* sysKey;
+		__int8** keyStat{};
 
+	public:
+		Output();
+	};
+
+	class IOHandler : protected KeyHandler {
+	private:
 		int			gMode;
 
 		bool		isTerminated;
@@ -66,15 +80,9 @@ namespace Nyan {
 		IOHandler();
 		IOHandler(const int gMode);
 
+		// virtual함수를 선언해야하나
+
 		void drawKey(const int numKey, mutex*& mUsrKey, conVar**& cvNumKey, conVar*& cvCmdKey);
-	};
-
-	class Output {
-	private:
-		__int8**	keyStat{};
-
-	public:
-		Output();
 	};
 
 	void hideCursor();
