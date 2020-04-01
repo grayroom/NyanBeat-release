@@ -17,8 +17,8 @@ using namespace std;
 
 typedef condition_variable conVar;
 
-namespace NyanIO {
-	struct Keyset {
+namespace Nyan {
+	struct KeySet {
 		/*
 			[--------EMPTY 22 FIELD--------][987654321]
 			Only lower 9 bit has valid key value. When number key pressed, corresponding bit set high(1). In this way, you can
@@ -32,50 +32,18 @@ namespace NyanIO {
 	};
 
 	class Input {
-	private:
-		Keyset*	keyUsrStat;
-		int		gMode;
-
-		bool		isTerminated;
-
-		thread*	tKeyListen{};
-		thread*	tClock{};
-		
-		conVar**	cvUsrKey;
-		conVar*		cvCmdKey;
-		conVar**	cvSysKey;
-		conVar*		cvClock;
-
-		mutex*	mUsrKey;
-		mutex*	mSysKey;
-
-	public:
-		Input();
-		Input(NyanIO::Keyset*& keyStat, vector<mutex*>& hMutex, vector<conVar*>& cvs, const int gMode);
-
-		void inputFrame(const int period);
-		void listenKeyStat(const int option);
-		void listenClock(const int clock);
-
-		Keyset* getKeyStat();
-	};
-
-	class Output {
-	private:
-		Keyset*		keyUsrStat;
-		__int16*	sysNumKey;
+	protected:
+		KeySet*		usrKeyStat;
+		__int16*	sysNumStat;
 
 		int			gMode;
 
-		int*		keyPhase;
-
 		bool		isTerminated;
 
-		// thread handles
-		vector<thread*>	hThreads{};
-		thread**	tKeyDraw{};
+		// thread handle
+		thread*		tKeyListen;
+		thread*		tClkListen;
 
-		
 		// condition variables
 		conVar**	cvUsrKey;
 		conVar*		cvCmdKey;
@@ -83,21 +51,41 @@ namespace NyanIO {
 		conVar*		cvClock;
 
 		// mutexes
-		vector<mutex*> hMutex{};
-		mutex*	mUsrKey;
-		mutex*	mSysKey;
-		mutex*	mKeyDraw;
+		mutex*		mUsrKey;
+		mutex*		mSysKey;
 
 	public:
-		Output();
-		Output(NyanIO::Keyset*& keyStat, vector<mutex*>& hMutex, vector<conVar*>& cvs, const int gMode);
+		Input();
+		Input(const int gMode);
+
+		void inputFrame(const int period);
+		void listenKeyStat(const int option);
+		void listenClock(const int clock);
+
+		KeySet* getKeyStat();
+	};
+
+	class IOHandler : protected Input {
+	private:
+		// thread handle
+		thread**	tKeyDraw;
+
+	public:
+		IOHandler();
+		IOHandler(const int gMode);
 
 		void outputFrame();
 
 		void drawKey(const int numKey);
 	};
 
-	void initNyanIO(Input*& pInput, Output*& pOutput, NyanIO::Keyset*& keyStat, vector<mutex*>& hMutex, vector<conVar*>& cvs, const int gMode);
+	class Screen {
+	private:
+		__int8**	keyStat{};
+
+	public:
+		Screen();
+	};
 
 	void hideCursor();
 	void moveCursor(const int x, const int y);

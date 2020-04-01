@@ -15,17 +15,17 @@ int main() {
 	Sound sound{ 3, fileList };
 	sound.PlaySoundNo(0);
 
-	NyanIO::Input* pInput{};
-	NyanIO::Output* pOutput{};
-	NyanIO::Keyset* pKeySet{};
+	Nyan::Input* pInput{};
+	Nyan::IOHandler* pOutput{};
+	Nyan::KeySet* pKeySet{};
 	vector<mutex*> hMutex{};
 	vector<conVar*> cvs{};
 
-	NyanIO::initNyanIO(pInput, pOutput, pKeySet, hMutex, cvs, GMODE_9KEY);
+	Nyan::initNyanIO(pInput, pOutput, pKeySet, hMutex, cvs, GMODE_9KEY);
 
 	vector<thread*> hThreads{};
-	hThreads.push_back(new thread{ &NyanIO::Input::inputFrame, &*pInput, 200 });
-	hThreads.push_back(new thread{ &NyanIO::Output::outputFrame, &*pOutput });
+	hThreads.push_back(new thread{ &Nyan::Input::inputFrame, &*pInput, 200 });
+	hThreads.push_back(new thread{ &Nyan::IOHandler::outputFrame, &*pOutput });
 
 	for (thread* xThread : hThreads) {
 		xThread->join();
