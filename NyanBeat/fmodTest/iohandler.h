@@ -37,15 +37,13 @@ namespace Nyan {
 		KeySet* sysKey;
 
 		int numKey;
-		int clock;
 		//TODO: mutex & condition_variable을 여기에 저장해둘지 생각해볼것
-		mutex*& mUsr;
-		mutex*& mSys;
+		mutex* mUsr;
+		mutex* mSys;
 
-		conVar**& cvUsrNum;
-		conVar**& cvSysNum;
-		conVar*& cvUsrCmd;
-		conVar*& cvClock;
+		conVar* cvUsrNum;
+		conVar* cvSysNum;
+		conVar* cvUsrCmd;
 
 	public:
 		KeyHandler();
@@ -60,36 +58,33 @@ namespace Nyan {
 
 	class Input : public KeyHandler {
 	private:
-		int		clock;
-		int		numKey;
+		int		clkPeriod;
 
 		bool	isTerminated;
 
 	public:
 		Input();
-		Input(const int numKey);
 		Input(KeySet*& usrKey, KeySet*& sysKey, const int numKey);
 		Input(KeySet*& usrKey, KeySet*& sysKey, const int numKey, mutex**& ms, conVar**& cvs);
 
 		void	listenUsrKey(const int opt);
 		void	listenSysKey(fs::path noteDir);
-		void	listenClock();
 	};
 
 	class Output {
 	private:
 		__int8** keyBuf;
-		int numKey;
 
-		mutex*& mKeyBuf;
+		int		numKey;
+		int		clkPeriod;
 
-		conVar*& cvClock;
+		mutex* mKeyBuf;
 
 		bool isTerminated;
 
 	public:
 		Output();
-		Output(const int numKey, conVar*& cvClock);
+		Output(const int numKey);
 
 		void drawConsoleNote();
 		void drawNote(const int keyNum);
@@ -97,14 +92,12 @@ namespace Nyan {
 
 	class IOHandler : public KeyHandler {
 	private:
-		int		clock;
-		int		numKey;
+		int		clkPeriod;
 
 		bool	isTerminated;
 
 	public:
 		IOHandler();
-		IOHandler(const int gMode);
 		IOHandler(KeySet*& usrKey, KeySet*& sysKey, const int gMode);
 		IOHandler(KeySet*& usrKey, KeySet*& sysKey, const int gMode, mutex**& ms, conVar**& cvs);
 

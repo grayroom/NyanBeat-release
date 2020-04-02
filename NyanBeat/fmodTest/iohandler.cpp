@@ -7,7 +7,7 @@
 // ------------------------------------------------------------------------------------------------
 
 Nyan::KeyHandler::KeyHandler()
-	: clock{ 0 }, mUsr{ new mutex }, mSys{ new mutex }, cvUsrNum{ new conVar* }, cvSysNum{ new conVar* }, cvUsrCmd{ new conVar }, cvClock{ new conVar } {
+	: numKey{ 0 }, mUsr{ new mutex }, mSys{ new mutex }, cvUsrNum{ new conVar }, cvSysNum{ new conVar }, cvUsrCmd{ new conVar } {
 	usrKey->numKey = 0;
 	usrKey->cmdKey = 0;
 	sysKey->numKey = 0;
@@ -26,17 +26,9 @@ Nyan::KeyHandler::KeyHandler(KeySet*& usrKey, KeySet*& sysKey, const int numKey,
 	mUsr = ms[0];
 	mSys = ms[1];
 
-	int i{ 0 };
-	cvUsrNum = new conVar * [numKey];
-	for (int j = 0; j < numKey; ++i, ++j) {
-		cvUsrNum[j] = cvs[i];
-	}
-	cvSysNum = new conVar * [numKey];
-	for (int j = 0; j < numKey; ++i, ++j) {
-		cvSysNum[j] = cvs[i];
-	}
-	cvUsrCmd = cvs[i++];
-	cvClock = cvs[i];
+	cvUsrNum = cvs[0];
+	cvSysNum = cvs[1];
+	cvUsrCmd = cvs[2];
 }
 
 Nyan::KeySet*& Nyan::KeyHandler::getUsrKey() {
@@ -58,16 +50,13 @@ void Nyan::KeyHandler::setSysKey(KeySet*& sysKey) {
 // ------------------------------------------------------------------------------------------------
 
 Nyan::Input::Input()
-	: KeyHandler(), numKey{ 0 }, isTerminated{ false } {}
-
-Nyan::Input::Input(const int gMode)
-	: KeyHandler(), numKey { numKey }, isTerminated{ false } {}
+	: KeyHandler(), clkPeriod{ 0 }, isTerminated{ false } {}
 
 Nyan::Input::Input(KeySet*& usrKey, KeySet*& sysKey, const int numKey)
-	: KeyHandler(usrKey, sysKey, numKey), isTerminated{ false } {}
+	: KeyHandler(usrKey, sysKey, numKey), clkPeriod{}, isTerminated{ false } {}
 
 Nyan::Input::Input(KeySet*& usrKey, KeySet*& sysKey, const int numKey, mutex**& ms, conVar**& cvs)
-	: KeyHandler(usrKey, sysKey, numKey, ms, cvs), isTerminated{ false } {}
+	: KeyHandler(usrKey, sysKey, numKey, ms, cvs), clkPeriod{}, isTerminated{ false } {}
 
 void Nyan::Input::listenUsrKey(const int opt) {
 	chrono::system_clock::time_point start{};
@@ -84,7 +73,7 @@ void Nyan::Input::listenUsrKey(const int opt) {
 				mUsr->lock();
 				usrKey->numKey |= 0b1 << i;
 				mUsr->unlock();
-				cvUsrNum[i]->notify_one();
+				cvUsrNum->notify_all();
 			}
 		}
 
@@ -119,40 +108,25 @@ void Nyan::Input::listenSysKey(fs::path noteDir) {
 
 		for (int i = 0; i < numKey; ++i) {
 			if ((sysKey->numKey & (0b1 << i)) == (0b1 << i)) {
-				cvSysNum[i]->notify_one();
+				cvSysNum->notify_all();
 			}
 		}
 		this_thread::sleep_until(start + chrono::milliseconds(clock));
 	} while (!isTerminated);
 }
 
-void Nyan::Input::listenClock() {
-	chrono::system_clock::time_point start{ chrono::system_clock::now() };
-
-	do {
-		this_thread::sleep_until(start = start + chrono::milliseconds(clock));
-
-		cvClock->notify_all();
-	} while (!isTerminated);
-}
-
 // ------------------------------------------------------------------------------------------------
 
 Nyan::IOHandler::IOHandler()
-	: KeyHandler(), numKey{ 0 }, isTerminated{ false } {}
-
-Nyan::IOHandler::IOHandler(const int gMode)
-	: KeyHandler(), numKey{ gMode }, isTerminated{ false } {
-	hideCursor(); // optional
-}
+	: KeyHandler(), clkPeriod{ 0 }, isTerminated{ false } {}
 
 Nyan::IOHandler::IOHandler(KeySet*& usrKey, KeySet*& sysKey, const int numKey)
-	: KeyHandler(usrKey, sysKey, numKey), isTerminated{ false } {
+	: KeyHandler(usrKey, sysKey, numKey), clkPeriod{}, isTerminated{ false } {
 	hideCursor(); // optional
 }
 
 Nyan::IOHandler::IOHandler(KeySet*& usrKey, KeySet*& sysKey, const int numKey, mutex**& ms, conVar**& cvs)
-	: KeyHandler(usrKey, sysKey, numKey, ms, cvs), isTerminated{ false } {
+	: KeyHandler(usrKey, sysKey, numKey, ms, cvs), clkPeriod{}, isTerminated{ false } {
 	hideCursor();
 }
 
@@ -161,34 +135,32 @@ void Nyan::IOHandler::drawKey(const int keyNum, __int8*& keyBuf, mutex*& mKeyBuf
 	int keyPhase{ 9 };
 
 	while (!isTerminated) {
-		unique_lock<mutex> mUsrNumKey(*mUsr); // Sync to user key
-		cvUsrNum[keyNum]->wait(mUsrNumKey);
-
-		for (int i = 0; i < keyNum; ++i) {
-			unique_lock<mutex> clockSync{ *mKeyBuf };
-			cvClock->wait(clockSync);
-			keyBuf[keyNum] = keyPhase--;
-			clockSync.unlock();
+		{
+			unique_lock<mutex> mUsrNumKey(*mUsr); // Sync to user key
+			cvUsrNum->wait(mUsrNumKey, [&] { return (usrKey->numKey & (0b1 << keyNum)) == (0b1 << keyNum); });
 		}
 
-		mUsrNumKey.unlock();
+		for (int i = 0; i < MAX_KEY_PHASE; ++i) {
+			mKeyBuf->lock();
+			keyBuf[keyNum] = MAX_KEY_PHASE - i;
+			mKeyBuf->unlock();
+		}
 	}
 }
 
 // ------------------------------------------------------------------------------------------------
 
 Nyan::Output::Output()
-	: keyBuf{ new __int8* }, numKey{}, cvClock{ new conVar }, isTerminated{ false } {}
+	: keyBuf{ new __int8* }, numKey{}, clkPeriod{}, mKeyBuf{ new mutex }, isTerminated{ false } {}
 
-Nyan::Output::Output(const int numKey, conVar*& cvClock)
-	: keyBuf{ new __int8* [numKey] }, numKey{ numKey }, cvClock{ cvClock }, isTerminated{ false } {}
+Nyan::Output::Output(const int numKey)
+	: keyBuf{ new __int8* [numKey] }, numKey{ numKey }, clkPeriod{}, mKeyBuf{ new mutex }, isTerminated{ false } {}
 
 void Nyan::Output::drawConsoleNote() {
+	chrono::system_clock::time_point start{ chrono::system_clock::now() };
+	
 	do {
-		unique_lock<mutex> clockSync{ *mKeyBuf };
-		cvClock->wait(clockSync);
-		clockSync.unlock();
-
+		this_thread::sleep_until(start + chrono::milliseconds(clkPeriod)); // clkPeriod를 int형에서 chrono::miliseconds형으로 바꿀까
 		for (int i = 0; i < numKey; ++i) {
 			drawNote(i);
 		}
