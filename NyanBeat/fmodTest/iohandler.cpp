@@ -157,21 +157,21 @@ Nyan::IOHandler::IOHandler(KeySet*& usrKey, KeySet*& sysKey, const int numKey, m
 }
 
 //TODO: sysKey와 usrKey를 동시에 출력할 방법을 생각해보자
-void Nyan::IOHandler::drawKey(const int numKey, __int8*& keyBuf, mutex*& mKeyBuf) {
-	int posX{ numKey % 3 + 1 }, posY{ 3 - numKey / 3 };
+void Nyan::IOHandler::drawKey(const int keyNum, __int8*& keyBuf, mutex*& mKeyBuf) {
 	int keyPhase{ 9 };
 
 	while (!isTerminated) {
 		unique_lock<mutex> mUsrNumKey(*mUsr); // Sync to user key
-		cvUsrNum[numKey]->wait(mUsrNumKey);
-		mUsrNumKey.unlock();
+		cvUsrNum[keyNum]->wait(mUsrNumKey);
 
-		for (int i = 0; i < numKey; ++i) {
+		for (int i = 0; i < keyNum; ++i) {
 			unique_lock<mutex> clockSync{ *mKeyBuf };
 			cvClock->wait(clockSync);
-			keyBuf[numKey] = keyPhase--;
+			keyBuf[keyNum] = keyPhase--;
 			clockSync.unlock();
 		}
+
+		mUsrNumKey.unlock();
 	}
 }
 
@@ -183,10 +183,23 @@ Nyan::Output::Output()
 Nyan::Output::Output(const int numKey, conVar*& cvClock)
 	: keyBuf{ new __int8* [numKey] }, numKey{ numKey }, cvClock{ cvClock }, isTerminated{ false } {}
 
-void Nyan::Output::printConsole() {
+void Nyan::Output::drawConsoleNote() {
 	do {
-		//...
+		unique_lock<mutex> clockSync{ *mKeyBuf };
+		cvClock->wait(clockSync);
+		clockSync.unlock();
+
+		for (int i = 0; i < numKey; ++i) {
+			drawNote(i);
+		}
 	} while (!isTerminated);
+}
+
+void Nyan::Output::drawNote(const int keyNum) {
+	int posX{ keyNum % 3 + 1 }, posY{ 3 - keyNum / 3 };
+
+	moveCursor(posX, posY);
+	cout << *keyBuf[keyNum];
 }
 
 // ------------------------------------------------------------------------------------------------

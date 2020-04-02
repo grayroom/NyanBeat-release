@@ -73,13 +73,15 @@ namespace Nyan {
 
 		void	listenUsrKey(const int opt);
 		void	listenSysKey(fs::path noteDir);
-		void	listenClock()
+		void	listenClock();
 	};
 
 	class Output {
 	private:
 		__int8** keyBuf;
 		int numKey;
+
+		mutex*& mKeyBuf;
 
 		conVar*& cvClock;
 
@@ -89,7 +91,8 @@ namespace Nyan {
 		Output();
 		Output(const int numKey, conVar*& cvClock);
 
-		void printConsole();
+		void drawConsoleNote();
+		void drawNote(const int keyNum);
 	};
 
 	class IOHandler : public KeyHandler {
@@ -107,7 +110,7 @@ namespace Nyan {
 
 		// virtual함수를 선언해야하나
 
-		void drawKey(const int numKey, __int8*& keyBuf, mutex*& mKeyBuf);
+		void drawKey(const int keyNum, __int8*& keyBuf, mutex*& mKeyBuf);
 	};
 
 	void hideCursor();
