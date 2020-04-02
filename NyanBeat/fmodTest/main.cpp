@@ -8,7 +8,6 @@
 #define GMODE 9
 
 
-
 int main() {
 	std::vector<fs::path> fileList{ getFiles("../source/sound") };
 	
@@ -29,9 +28,8 @@ int main() {
 	hListenKey[0] = new thread{ &Nyan::Input::listenUsrKey, pInput , NYANIO_NOW, mUsrKey, cvUsrNumKey, cvUsrCmdKey};
 	//hListenKey[1] = new thread{ &Nyan::Input::listenSysKey, pIOHandler, /*path argument*/, mSysKey, cvSysNumKey};
 
-	for (thread* xThread : hThreads) {
-		xThread->join();
-	}
+	hListenKey[0]->join();
+	//hListenKey[1]->join();
 
 	/*do {
 		if (pInput->getKeyStat()->numKey != 0) {

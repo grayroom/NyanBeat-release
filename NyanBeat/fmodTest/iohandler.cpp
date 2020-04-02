@@ -6,17 +6,37 @@
 
 // ------------------------------------------------------------------------------------------------
 
-Nyan::KeyHandler::KeyHandler() {
+Nyan::KeyHandler::KeyHandler()
+	: clock{ 0 }, mUsr{ new mutex }, mSys{ new mutex }, cvUsrNum{ new conVar* }, cvSysNum{ new conVar* }, cvUsrCmd{ new conVar }, cvClock{ new conVar } {
 	usrKey->numKey = 0;
 	usrKey->cmdKey = 0;
 	sysKey->numKey = 0;
 	sysKey->cmdKey = 0;
 }
 
-Nyan::KeyHandler::KeyHandler(KeySet*& usrKey, KeySet*& sysKey) 
+Nyan::KeyHandler::KeyHandler(KeySet*& usrKey, KeySet*& sysKey, const int numKey) 
 	: KeyHandler() {
 	this->usrKey = usrKey;
 	this->usrKey = sysKey;
+	this->numKey = numKey;
+}
+
+Nyan::KeyHandler::KeyHandler(KeySet*& usrKey, KeySet*& sysKey, const int numKey, mutex**& ms, conVar**& cvs)
+	: KeyHandler(usrKey, sysKey, numKey) {
+	mUsr = ms[0];
+	mSys = ms[1];
+
+	int i{ 0 };
+	cvUsrNum = new conVar * [numKey];
+	for (int j = 0; j < numKey; ++i, ++j) {
+		cvUsrNum[j] = cvs[i];
+	}
+	cvSysNum = new conVar * [numKey];
+	for (int j = 0; j < numKey; ++i, ++j) {
+		cvSysNum[j] = cvs[i];
+	}
+	cvUsrCmd = cvs[i++];
+	cvClock = cvs[i];
 }
 
 Nyan::KeySet*& Nyan::KeyHandler::getUsrKey() {
@@ -38,105 +58,136 @@ void Nyan::KeyHandler::setSysKey(KeySet*& sysKey) {
 // ------------------------------------------------------------------------------------------------
 
 Nyan::Input::Input()
-	: KeyHandler(), gMode{ 0 }, isTerminated{ false } {}
+	: KeyHandler(), numKey{ 0 }, isTerminated{ false } {}
 
 Nyan::Input::Input(const int gMode)
-	: KeyHandler(), gMode { gMode }, isTerminated{ false } {}
+	: KeyHandler(), numKey { numKey }, isTerminated{ false } {}
 
-Nyan::Input::Input(const int gMode, KeySet*& usrKey, KeySet*& sysKey)
-	: KeyHandler(usrKey, sysKey), gMode{ gMode } {}
+Nyan::Input::Input(KeySet*& usrKey, KeySet*& sysKey, const int numKey)
+	: KeyHandler(usrKey, sysKey, numKey), isTerminated{ false } {}
 
-void Nyan::Input::listenUsrKey(const int opt, mutex*& mUsrKey, conVar**& cvNumKey, conVar*& cvCmdKey) {
+Nyan::Input::Input(KeySet*& usrKey, KeySet*& sysKey, const int numKey, mutex**& ms, conVar**& cvs)
+	: KeyHandler(usrKey, sysKey, numKey, ms, cvs), isTerminated{ false } {}
+
+void Nyan::Input::listenUsrKey(const int opt) {
 	chrono::system_clock::time_point start{};
 
 	do {
 		start = chrono::system_clock::now();
-		mUsrKey->lock();
+		mUsr->lock();
 		usrKey->numKey = 0;
 		usrKey->cmdKey = 0;
-		mUsrKey->unlock();
+		mUsr->unlock();
 
-		for (int i = 0; i < gMode; ++i) {
+		for (int i = 0; i < numKey; ++i) {
 			if (GetAsyncKeyState(VK_NUMPAD1 + i) & opt) {
-				mUsrKey->lock();
+				mUsr->lock();
 				usrKey->numKey |= 0b1 << i;
-				mUsrKey->unlock();
-				cvNumKey[i]->notify_one();
+				mUsr->unlock();
+				cvUsrNum[i]->notify_one();
 			}
 		}
 
 		if (GetAsyncKeyState(VK_ESCAPE) & opt) {
-			mUsrKey->lock();
+			mUsr->lock();
 			usrKey->cmdKey = VK_ESCAPE;
-			mUsrKey->unlock();
-			cvCmdKey->notify_all();
+			mUsr->unlock();
+			cvUsrCmd->notify_all();
 		}
 		this_thread::sleep_until(start + chrono::milliseconds(1));
 	} while (!isTerminated);
 }
 
-void Nyan::Input::listenSysKey(fs::path noteDir, mutex*& mSysKey, conVar**& cvNumKey) {
+void Nyan::Input::listenSysKey(fs::path noteDir) {
 	fstream noteStream{ noteDir, ios::binary | ios::in };
 	chrono::system_clock::time_point start{};
 
 	// period, gMode데이터를 읽어옴
-	int periodRef, gModeRef;
-	noteStream >> periodRef >> gModeRef;
+	int clock, gModeRef;
+	noteStream >> clock >> gModeRef;
 
-	if (gMode != gModeRef) {
+	if (numKey != gModeRef) {
 		// 예외처리
 	}
-
-	// period를 IOHandler또는 Output에게 넘겨줘야 할까?
 
 	do { // 값을 일정시간 먼저 읽어와야함!!
 		start = chrono::system_clock::now();
 
-		mSysKey->lock();
+		mSys->lock();
 		noteStream >> sysKey->numKey;
-		mSysKey->unlock();
+		mSys->unlock();
 
-		for (int i = 0; i < gMode; ++i) {
+		for (int i = 0; i < numKey; ++i) {
 			if ((sysKey->numKey & (0b1 << i)) == (0b1 << i)) {
-				cvNumKey[i]->notify_one();
+				cvSysNum[i]->notify_one();
 			}
 		}
-		this_thread::sleep_until(start + chrono::milliseconds(periodRef));
+		this_thread::sleep_until(start + chrono::milliseconds(clock));
+	} while (!isTerminated);
+}
+
+void Nyan::Input::listenClock() {
+	chrono::system_clock::time_point start{ chrono::system_clock::now() };
+
+	do {
+		this_thread::sleep_until(start = start + chrono::milliseconds(clock));
+
+		cvClock->notify_all();
 	} while (!isTerminated);
 }
 
 // ------------------------------------------------------------------------------------------------
 
 Nyan::IOHandler::IOHandler()
-	: KeyHandler(), gMode{ 0 }, isTerminated{ false } {}
+	: KeyHandler(), numKey{ 0 }, isTerminated{ false } {}
 
 Nyan::IOHandler::IOHandler(const int gMode)
-	: KeyHandler(), gMode{ gMode }, isTerminated{ false } {
+	: KeyHandler(), numKey{ gMode }, isTerminated{ false } {
 	hideCursor(); // optional
 }
 
-Nyan::IOHandler::IOHandler(const int gMode, KeySet*& usrKey, KeySet*& sysKey)
-	: KeyHandler(), gMode{ gMode }, isTerminated{ false } {
+Nyan::IOHandler::IOHandler(KeySet*& usrKey, KeySet*& sysKey, const int numKey)
+	: KeyHandler(usrKey, sysKey, numKey), isTerminated{ false } {
 	hideCursor(); // optional
+}
+
+Nyan::IOHandler::IOHandler(KeySet*& usrKey, KeySet*& sysKey, const int numKey, mutex**& ms, conVar**& cvs)
+	: KeyHandler(usrKey, sysKey, numKey, ms, cvs), isTerminated{ false } {
+	hideCursor();
 }
 
 //TODO: sysKey와 usrKey를 동시에 출력할 방법을 생각해보자
-void Nyan::IOHandler::drawKey(const int numKey, mutex*& mUsrKey, conVar**& cvNumKey, conVar*& cvCmdKey) {
+void Nyan::IOHandler::drawKey(const int numKey, __int8*& keyBuf, mutex*& mKeyBuf) {
 	int posX{ numKey % 3 + 1 }, posY{ 3 - numKey / 3 };
+	int keyPhase{ 9 };
 
 	while (!isTerminated) {
-		unique_lock<mutex> mUsrNumKey(*mUsrKey); // Sync to user key
-		cvNumKey[numKey]->wait(mUsrNumKey, [&] { return (usrKey->numKey & (0b1 << numKey)) == (0b1 << numKey); });
-		
-		//TODO: push to output buffer
-		
+		unique_lock<mutex> mUsrNumKey(*mUsr); // Sync to user key
+		cvUsrNum[numKey]->wait(mUsrNumKey);
 		mUsrNumKey.unlock();
+
+		for (int i = 0; i < numKey; ++i) {
+			unique_lock<mutex> clockSync{ *mKeyBuf };
+			cvClock->wait(clockSync);
+			keyBuf[numKey] = keyPhase--;
+			clockSync.unlock();
+		}
 	}
 }
 
 // ------------------------------------------------------------------------------------------------
 
+Nyan::Output::Output()
+	: keyBuf{ new __int8* }, numKey{}, cvClock{ new conVar }, isTerminated{ false } {}
 
+Nyan::Output::Output(const int numKey, conVar*& cvClock)
+	: keyBuf{ new __int8* [numKey] }, numKey{ numKey }, cvClock{ cvClock }, isTerminated{ false } {}
+
+void Nyan::Output::printConsole() {
+	do {
+		//...
+	} while (!isTerminated);
+}
 
 // ------------------------------------------------------------------------------------------------
 
