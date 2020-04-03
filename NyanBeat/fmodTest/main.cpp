@@ -5,7 +5,6 @@
 #include "sound.h"
 
 #define TRACK 3
-#define GMODE 9
 
 
 int main() {
@@ -14,31 +13,35 @@ int main() {
 	Sound sound{ TRACK, fileList };
 	sound.PlaySoundNo(0);
 
-	Nyan::Input* pInput{ new Nyan::Input{GMODE} };
-	Nyan::IOHandler* pIOHandler{ new Nyan::IOHandler{GMODE, pInput->getUsrKey(), pInput->getSysKey()} };
+	// ------------------------------------------------------------------------------------------------
 
-	mutex* mUsrKey{ new mutex },
-		* mSysKey{ new mutex };
+	Nyan::Input* pInput{ new Nyan::Input{GMODE_9KEY} };
+	mutex** mList{ pInput->getMutexList() };
+	conVar** cvList{ pInput->getConvarList() };
 
-	conVar** cvUsrNumKey{},
-		** cvSysNumKey{},
-		* cvUsrCmdKey{};
+	Nyan::Output* pOutput{ new Nyan::Output{GMODE_9KEY} };
+
+	Nyan::IOHandler* pIOHandler{ new Nyan::IOHandler{pInput->getUsrKey(), pInput->getSysKey(), GMODE_9KEY, mList, cvList} };
 
 	thread** hListenKey{ new thread * [2] };
-	hListenKey[0] = new thread{ &Nyan::Input::listenUsrKey, pInput , NYANIO_NOW, mUsrKey, cvUsrNumKey, cvUsrCmdKey};
-	//hListenKey[1] = new thread{ &Nyan::Input::listenSysKey, pIOHandler, /*path argument*/, mSysKey, cvSysNumKey};
+	hListenKey[0] = new thread{ &Nyan::Input::listenUsrKey, pInput , NYANIO_NOW};
+	//hListenKey[1] = new thread{ &Nyan::Input::listenSysKey, pIOHandler, /*path argument*/};
 
-	hListenKey[0]->join();
+	thread* hConsole = new thread{ &Nyan::Output::drawConsoleNote, pOutput };
+	
+	thread** hDrawKey{ new thread * [GMODE_9KEY] };
+	for (int i = 0; i < GMODE_9KEY; ++i) {
+		hDrawKey[i] = new thread{ &Nyan::IOHandler::drawKey, pIOHandler, i, pOutput->getKeyBuf(), pOutput->getMKeyBuf() };
+	}
+
+	for (int i = 0; i < GMODE_9KEY; ++i) {
+		hDrawKey[i]->join();
+	}
+	hConsole->join();
 	//hListenKey[1]->join();
+	hListenKey[0]->join();
 
-	/*do {
-		if (pInput->getKeyStat()->numKey != 0) {
-			std::cout << "Current KeySet(num): " << std::bitset<9>(pInput->getKeyStat()->numKey) << std::endl;
-		}
-		if (pInput->getKeyStat()->cmdKey != 0) {
-			std::cout << "Current KeySet(cmd): " << std::bitset<9>(pInput->getKeyStat()->cmdKey) << std::endl;
-		}
-	} while (true);*/
+	// ------------------------------------------------------------------------------------------------
 
 	return 0;
 }

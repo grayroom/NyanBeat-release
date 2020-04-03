@@ -24,11 +24,11 @@ namespace Nyan {
 			Only lower 9 bit has valid key value. When number key pressed, corresponding bit set high(1).
 			In this way, we can get 9 key status information at the same time(9-key rollover)
 		*/
-		__int16 numKey = 0;
+		__int16 num = 0;
 		/*
 			Get single command key
 		*/
-		__int8 cmdKey = 0;
+		__int8 cmd = 0;
 	};
 
 	class KeyHandler {
@@ -47,13 +47,18 @@ namespace Nyan {
 
 	public:
 		KeyHandler();
+		KeyHandler(const int numKey);
 		KeyHandler(KeySet*& usrKey, KeySet*& sysKey, const int numKey);
 		KeyHandler(KeySet*& usrKey, KeySet*& sysKey, const int numKey, mutex**& ms, conVar**& cvs);
 
-		KeySet*&	getUsrKey();
+		KeySet*	getUsrKey();
 		void		setUsrKey(KeySet*& keySet);
-		KeySet*&	getSysKey();
+		KeySet*	getSysKey();
 		void		setSysKey(KeySet*& keySet);
+		mutex**	getMutexList();
+		void		setMutexList(mutex**& mList);
+		conVar**	getConvarList();
+		void		setConvarList(conVar**& cvList);
 	};
 
 	class Input : public KeyHandler {
@@ -64,8 +69,8 @@ namespace Nyan {
 
 	public:
 		Input();
-		Input(KeySet*& usrKey, KeySet*& sysKey, const int numKey);
-		Input(KeySet*& usrKey, KeySet*& sysKey, const int numKey, mutex**& ms, conVar**& cvs);
+		Input(const int numKey);
+		Input(KeySet* usrKey, KeySet* sysKey, const int numKey, mutex** ms, conVar** cvs);
 
 		void	listenUsrKey(const int opt);
 		void	listenSysKey(fs::path noteDir);
@@ -73,7 +78,7 @@ namespace Nyan {
 
 	class Output {
 	private:
-		__int8** keyBuf;
+		__int8* keyBuf;
 
 		int		numKey;
 		int		clkPeriod;
@@ -85,6 +90,11 @@ namespace Nyan {
 	public:
 		Output();
 		Output(const int numKey);
+
+		__int8* getKeyBuf();
+		void setKeyBuf(__int8* keyBuf);
+		mutex* getMKeyBuf();
+		void setMKeyBuf(mutex* mKeyBuf);
 
 		void drawConsoleNote();
 		void drawNote(const int keyNum);
@@ -98,12 +108,12 @@ namespace Nyan {
 
 	public:
 		IOHandler();
-		IOHandler(KeySet*& usrKey, KeySet*& sysKey, const int gMode);
-		IOHandler(KeySet*& usrKey, KeySet*& sysKey, const int gMode, mutex**& ms, conVar**& cvs);
+		IOHandler(const int numKey);
+		IOHandler(KeySet* usrKey, KeySet* sysKey, const int numKey, mutex** ms, conVar** cvs);
 
 		// virtual함수를 선언해야하나
 
-		void drawKey(const int keyNum, __int8*& keyBuf, mutex*& mKeyBuf);
+		void drawKey(const int keyNum, __int8* keyBuf, mutex* mKeyBuf);
 	};
 
 	void hideCursor();
