@@ -87,24 +87,22 @@ void Nyan::Input::listenUsrKey(const int opt) {
 
 	do {
 		start = chrono::system_clock::now();
-		mUsr->lock();
-		usrKey->num = 0;
-		usrKey->cmd = 0;
-		mUsr->unlock();
-
+		{
+			lock_guard<mutex> lgUsr{ *mUsr };
+			usrKey->num = 0;
+			usrKey->cmd = 0;
+		}
 		for (int i = 0; i < numKey; ++i) {
 			if (GetAsyncKeyState(VK_NUMPAD1 + i) & opt) {
-				mUsr->lock();
+				lock_guard<mutex> lgUsr{ *mUsr };
 				usrKey->num |= (0b1 << i);
-				mUsr->unlock();
 				cvUsrNum->notify_all();
 			}
 		}
 
 		if (GetAsyncKeyState(VK_ESCAPE) & opt) {
-			mUsr->lock();
+			lock_guard<mutex> lgUsr{ *mUsr };
 			usrKey->cmd = VK_ESCAPE;
-			mUsr->unlock();
 			cvUsrCmd->notify_all();
 		}
 		this_thread::sleep_until(start + chrono::milliseconds(1));
@@ -127,11 +125,10 @@ void Nyan::Input::listenSysKey(fs::path noteDir) {
 
 	do { // 값을 일정시간 먼저 읽어와야함!!
 		start = chrono::system_clock::now();
-
-		mSys->lock();
-		noteStream >> sysKey->num;
-		mSys->unlock();
-
+		{
+			lock_guard<mutex> lgSys{ *mSys };
+			noteStream >> sysKey->num;
+		}
 		for (int i = 0; i < numKey; ++i) {
 			if ((sysKey->num & (0b1 << i)) == (0b1 << i)) {
 				cvSysNum->notify_all();
@@ -144,17 +141,17 @@ void Nyan::Input::listenSysKey(fs::path noteDir) {
 // ------------------------------------------------------------------------------------------------
 
 Nyan::Output::Output()
-	: keyBuf{ new __int8{} }, numKey{}, clkPeriod{ 200 }, mKeyBuf{ new mutex }, isTerminated{} {}
+	: note{ new __int8{} }, numKey{}, clkPeriod{ 10 }, mKeyBuf{ new mutex }, isTerminated{} {}
 
 Nyan::Output::Output(const int numKey)
-	: keyBuf{ new __int8[numKey] {} }, numKey{ numKey }, clkPeriod{ 200 }, mKeyBuf{ new mutex }, isTerminated{} {}
+	: note{ new __int8[numKey] {} }, numKey{ numKey }, clkPeriod{ 10 }, mKeyBuf{ new mutex }, isTerminated{} {}
 
 __int8* Nyan::Output::getKeyBuf() {
-	return keyBuf;
+	return note;
 }
 
 void Nyan::Output::setKeyBuf(__int8* keyBuf) {
-	this->keyBuf = keyBuf;
+	this->note = keyBuf;
 }
 
 mutex* Nyan::Output::getMKeyBuf() {
@@ -179,7 +176,7 @@ void Nyan::Output::drawNote(const int keyNum) {
 	int posX{ keyNum % 3 + 1 + 3 }, posY{ 3 - keyNum / 3 + 3 };
 
 	moveCursor(posX, posY);
-	cout << (char)(keyBuf[keyNum] + 48);
+	cout << (char)(note[keyNum] + 48);
 }
 
 // ------------------------------------------------------------------------------------------------
@@ -196,25 +193,23 @@ Nyan::IOHandler::IOHandler(KeySet* usrKey, KeySet* sysKey, const int numKey, mut
 }
 
 //TODO: sysKey와 usrKey를 동시에 출력할 방법을 생각해보자
-void Nyan::IOHandler::drawKey(const int keyNum, __int8* keyBuf, mutex* mKeyBuf) {
+void Nyan::IOHandler::drawKey(const int keyNum, __int8* note, mutex* mNote) {
 	chrono::system_clock::time_point start{ chrono::system_clock::now() };
 
 	while (!isTerminated) {
 		{
-			unique_lock<mutex> mUsrNumKey(*mUsr); // Sync to user key
-			cvUsrNum->wait(mUsrNumKey, [&] {
-				return (usrKey->num & (0b1 << keyNum)) == (0b1 << keyNum); 
-			});
-			usrKey->cmd &= ~(0b1 << keyNum);
+			unique_lock<mutex> lgUsrNum{ *mUsr }; // Sync to user key
+			cvUsrNum->wait(lgUsrNum, [&] { return (usrKey->num & (0b1 << keyNum)) == (0b1 << keyNum); });
+			usrKey->num &= ~(0b1 << keyNum);
 		}
 		for (int i = 0; i < MAX_KEY_PHASE; ++i) {
 			if ((usrKey->num & (0b1 << keyNum)) == (0b1 << keyNum)) {
 				i = 0;
 			}
-			mKeyBuf->lock();
-			keyBuf[keyNum] = MAX_KEY_PHASE - i - 1;
-			mKeyBuf->unlock();
-
+			{
+				lock_guard<mutex> lgNote{ *mNote };
+				note[keyNum] = MAX_KEY_PHASE - i - 1;
+			}
 			this_thread::sleep_until(start = start + chrono::milliseconds(clkPeriod));
 		}
 	}

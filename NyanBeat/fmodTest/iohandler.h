@@ -11,7 +11,7 @@
 #define GMDOE_6KEY		6
 #define GMODE_3KEY		3
 
-#define MAX_KEY_PHASE		9
+#define MAX_KEY_PHASE	9
 
 using namespace std;
 
@@ -48,14 +48,13 @@ namespace Nyan {
 	public:
 		KeyHandler();
 		KeyHandler(const int numKey);
-		KeyHandler(KeySet*& usrKey, KeySet*& sysKey, const int numKey);
 		KeyHandler(KeySet*& usrKey, KeySet*& sysKey, const int numKey, mutex**& ms, conVar**& cvs);
 
-		KeySet*	getUsrKey();
+		KeySet*		getUsrKey();
 		void		setUsrKey(KeySet*& keySet);
-		KeySet*	getSysKey();
+		KeySet*		getSysKey();
 		void		setSysKey(KeySet*& keySet);
-		mutex**	getMutexList();
+		mutex**		getMutexList();
 		void		setMutexList(mutex**& mList);
 		conVar**	getConvarList();
 		void		setConvarList(conVar**& cvList);
@@ -78,7 +77,7 @@ namespace Nyan {
 
 	class Output {
 	private:
-		__int8* keyBuf;
+		__int8* note;
 
 		int		numKey;
 		int		clkPeriod;
@@ -113,7 +112,7 @@ namespace Nyan {
 
 		// virtual함수를 선언해야하나
 
-		void drawKey(const int keyNum, __int8* keyBuf, mutex* mKeyBuf);
+		void drawKey(const int keyNum, __int8* note, mutex* mNote);
 	};
 
 	void hideCursor();

@@ -24,7 +24,7 @@ int main() {
 	Nyan::IOHandler* pIOHandler{ new Nyan::IOHandler{pInput->getUsrKey(), pInput->getSysKey(), GMODE_9KEY, mList, cvList} };
 
 	thread** hListenKey{ new thread * [2] };
-	hListenKey[0] = new thread{ &Nyan::Input::listenUsrKey, pInput , NYANIO_NOW};
+	hListenKey[0] = new thread{ &Nyan::Input::listenUsrKey, pInput , NYANIO_KEEP};
 	//hListenKey[1] = new thread{ &Nyan::Input::listenSysKey, pIOHandler, /*path argument*/};
 
 	thread* hConsole = new thread{ &Nyan::Output::drawConsoleNote, pOutput };
