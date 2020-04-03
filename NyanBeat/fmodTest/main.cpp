@@ -27,11 +27,11 @@ int main() {
 	hListenKey[0] = new thread{ &Nyan::Input::listenUsrKey, pInput , NYANIO_KEEP};
 	//hListenKey[1] = new thread{ &Nyan::Input::listenSysKey, pIOHandler, /*path argument*/};
 
-	thread* hConsole = new thread{ &Nyan::Output::drawConsoleNote, pOutput };
+	thread* hConsole = new thread{ &Nyan::Output::drawConsole, pOutput };
 	
 	thread** hDrawKey{ new thread * [GMODE_9KEY] };
 	for (int i = 0; i < GMODE_9KEY; ++i) {
-		hDrawKey[i] = new thread{ &Nyan::IOHandler::drawKey, pIOHandler, i, pOutput->getKeyBuf(), pOutput->getMKeyBuf() };
+		hDrawKey[i] = new thread{ &Nyan::IOHandler::drawUsrKey, pIOHandler, i, pOutput->getKeyBuf(), pOutput->getMKeyBuf() };
 	}
 
 	for (int i = 0; i < GMODE_9KEY; ++i) {

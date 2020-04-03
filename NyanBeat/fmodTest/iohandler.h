@@ -1,6 +1,7 @@
 #pragma once
 
 #include "resource.h"
+#include "common.h"
 
 #define NYANIO_NEVER	0x0000
 #define NYANIO_NOW		0x0001
@@ -62,6 +63,8 @@ namespace Nyan {
 
 	class Input : public KeyHandler {
 	private:
+		queue<KeySet*> sysKeyBuf;
+
 		int		clkPeriod;
 
 		bool	isTerminated;
@@ -90,13 +93,13 @@ namespace Nyan {
 		Output();
 		Output(const int numKey);
 
-		__int8* getKeyBuf();
-		void setKeyBuf(__int8* keyBuf);
-		mutex* getMKeyBuf();
-		void setMKeyBuf(mutex* mKeyBuf);
+		__int8*	getKeyBuf();
+		void	setKeyBuf(__int8* keyBuf);
+		mutex*	getMKeyBuf();
+		void	setMKeyBuf(mutex* mKeyBuf);
 
-		void drawConsoleNote();
-		void drawNote(const int keyNum);
+		void	drawConsole();
+		void	drawNote(const int keyNum);
 	};
 
 	class IOHandler : public KeyHandler {
@@ -112,7 +115,8 @@ namespace Nyan {
 
 		// virtual함수를 선언해야하나
 
-		void drawKey(const int keyNum, __int8* note, mutex* mNote);
+		void drawUsrKey(const int keyNum, __int8* note, mutex* mNote);
+		void drawSysKey(const int keyNum, __int8* note, mutex* mNote);
 	};
 
 	void hideCursor();

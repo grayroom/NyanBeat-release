@@ -74,13 +74,13 @@ void Nyan::KeyHandler::setConvarList(conVar**& cvList) {
 // ------------------------------------------------------------------------------------------------
 
 Nyan::Input::Input()
-	: KeyHandler(), clkPeriod{ 200 }, isTerminated{} {}
+	: KeyHandler(), sysKeyBuf{}, clkPeriod{ 200 }, isTerminated{} {}
 
 Nyan::Input::Input(const int numKey)
-	: KeyHandler(numKey), clkPeriod{ 200 }, isTerminated{} {}
+	: KeyHandler(numKey), sysKeyBuf{}, clkPeriod{ 200 }, isTerminated{} {}
 
 Nyan::Input::Input(KeySet* usrKey, KeySet* sysKey, const int numKey, mutex** ms, conVar** cvs)
-	: KeyHandler(usrKey, sysKey, numKey, ms, cvs), clkPeriod{ 200 }, isTerminated{} {}
+	: KeyHandler(usrKey, sysKey, numKey, ms, cvs), sysKeyBuf{}, clkPeriod{ 200 }, isTerminated{} {}
 
 void Nyan::Input::listenUsrKey(const int opt) {
 	chrono::system_clock::time_point start{};
@@ -112,22 +112,28 @@ void Nyan::Input::listenUsrKey(const int opt) {
 void Nyan::Input::listenSysKey(fs::path noteDir) {
 	fstream noteStream{ noteDir, ios::binary | ios::in };
 	chrono::system_clock::time_point start{};
+	KeySet* tempKey{ new KeySet };
 
 	// period, gMode데이터를 읽어옴
-	int gModeRef;
-	noteStream >> clkPeriod >> gModeRef;
+	int numKeyRef;
+	noteStream >> clkPeriod >> numKeyRef;
 
-	if (numKey != gModeRef) {
-		// 예외처리
+	if (numKey != numKeyRef) {
+		errPrint("IO error - numKey does not match");
 	}
 
 	// Trigger를 설계할 것
 
-	do { // 값을 일정시간 먼저 읽어와야함!!
+	do {
 		start = chrono::system_clock::now();
 		{
 			lock_guard<mutex> lgSys{ *mSys };
-			noteStream >> sysKey->num;
+			while (sysKeyBuf.size() != MAX_KEY_PHASE + 1) { // note 파일의 맨 뒤에 9개의 dummy data가 필요
+				noteStream >> tempKey->num;
+				sysKeyBuf.emplace(tempKey);
+			}
+			sysKey = sysKeyBuf.front();
+			sysKeyBuf.pop();
 		}
 		for (int i = 0; i < numKey; ++i) {
 			if ((sysKey->num & (0b1 << i)) == (0b1 << i)) {
@@ -162,7 +168,7 @@ void Nyan::Output::setMKeyBuf(mutex* mKeyBuf) {
 	this->mKeyBuf = mKeyBuf;
 }
 
-void Nyan::Output::drawConsoleNote() {
+void Nyan::Output::drawConsole() {
 	chrono::system_clock::time_point start{ chrono::system_clock::now() };
 	do {
 		this_thread::sleep_until(start + chrono::milliseconds(clkPeriod)); // clkPeriod를 int형에서 chrono::miliseconds형으로 바꿀까
@@ -193,7 +199,7 @@ Nyan::IOHandler::IOHandler(KeySet* usrKey, KeySet* sysKey, const int numKey, mut
 }
 
 //TODO: sysKey와 usrKey를 동시에 출력할 방법을 생각해보자
-void Nyan::IOHandler::drawKey(const int keyNum, __int8* note, mutex* mNote) {
+void Nyan::IOHandler::drawUsrKey(const int keyNum, __int8* note, mutex* mNote) {
 	chrono::system_clock::time_point start{ chrono::system_clock::now() };
 
 	while (!isTerminated) {
@@ -206,6 +212,25 @@ void Nyan::IOHandler::drawKey(const int keyNum, __int8* note, mutex* mNote) {
 			if ((usrKey->num & (0b1 << keyNum)) == (0b1 << keyNum)) {
 				i = 0;
 			}
+			{
+				lock_guard<mutex> lgNote{ *mNote };
+				note[keyNum] = MAX_KEY_PHASE - i - 1;
+			}
+			this_thread::sleep_until(start = start + chrono::milliseconds(clkPeriod));
+		}
+	}
+}
+
+void Nyan::IOHandler::drawSysKey(const int keyNum, __int8* note, mutex* mNote) {
+	chrono::system_clock::time_point start{ chrono::system_clock::now() };
+
+	while (!isTerminated) {
+		{
+			unique_lock<mutex> lgSysNum{ *mSys }; // Sync to user key
+			cvUsrNum->wait(lgSysNum, [&] { return (sysKey->num & (0b1 << keyNum)) == (0b1 << keyNum); });
+			sysKey->num &= ~(0b1 << keyNum);
+		}
+		for (int i = 0; i < MAX_KEY_PHASE; ++i) {
 			{
 				lock_guard<mutex> lgNote{ *mNote };
 				note[keyNum] = MAX_KEY_PHASE - i - 1;
